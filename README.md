@@ -1,5 +1,5 @@
 # TUGAS BESAR IMPLEMENTASI PERANCANNGAN PERANGKAT LUNAK
-# PASTIKAN SELALU PULL SEBELUM MENGODING 🙇🏿‍♂️
+## PASTIKAN SELALU PULL SEBELUM MENGODING 🙇🏿‍♂️
 
 ## 📌 **Sistem Pemesanan Menu di Restaurant**  
 
@@ -10,7 +10,7 @@
 | 103112400085  | Anastasia Adinda            |                           |
 | 103112400144  | Devi Nurliana               |                           |
 | 103112400198  | Izzah Minkhotun Fannisa     |                           |
-| 103112400201  | ifa Khairunnisa Irwanti     |                           |
+| 103112400201  | Syifa Khairunnisa Irwanti   |                           |
 | 103112400230  | Galuh Maharani              |                           |
 | 2311102316    | Boutefhika Nuha Zidayatul K.|                           |
 
@@ -25,16 +25,19 @@ Project ini merupakan tugas besar dari mata kuliah IPPL yang bertujuan untuk men
 - **Database:** MySQL
 - **Tools:** VsCode, Figma
 
-## ⚙️ Cara Menjalankan Proyek
-1. Buka netbeans, pada menu diatas pilih `Team`->`Remote`->`Clone`
-2. Isi input `Repository URL` dengan url dibawah
+## ⚙️ Cara Menjalankan Project
+1. Install Git
+2. Clone project dari GitHub di terminal
   **Clone repositori ini**
    ```bash
-   https://github.com/grazeza/skribee.git
-3. Isi input username dengan usernmae github masing masing dan token yang sudah ada di grup WA
-4. Untuk cone into merupakan tempat repository akan disimpan pada laptop
-5. Selanjutnya tinggal klik next saja sampai finish
-6. Setelah berhasil melakukan clone, harap melakukan pengeditan salah satu file
-7. Setelah diedit klik kanan pada proyek dan pilih `Git`->`Commit`, lalu isi pesan commit dan klik next sampai finish
-8. Setelah berhasil commit push perubahan dengan pilih `Git`->`Remote`->`Push`, lalu isi username dan token seperti sebelumnya dan klk next sampai finish
-### Untuk melakukan pull langkah nya sama seperti push tetapi alih alih memilih `Push` pilih `Pull`
+   
+3. Kalo ada temen yang habis update code jangan lupa di pull dulu (pokoknya sebelum ngoding **git pull** dlu di Terminal VsCode)
+4. Kalo kamu yang habis ngoding jangan lupa di update, buka Termainal VsCode lalu:
+   ```
+   git add .
+   git commit -m "update fitur login"
+   git push
+   ```
+6. Selesai.
+
+# SELAMAT NGODINGGGG👩🏻‍💻
