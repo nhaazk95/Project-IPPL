@@ -16,60 +16,13 @@
     $bestSeller = [];
     if ($exeBS) while ($row = mysqli_fetch_assoc($exeBS)) $bestSeller[] = $row;
 
-    // Fallback: kalau belum ada data order, ambil 6 menu pertama
     if (count($bestSeller) == 0) {
         $exeF = mysqli_query($con, "SELECT * FROM tb_menu WHERE status='tersedia' LIMIT 6");
         if ($exeF) while ($row = mysqli_fetch_assoc($exeF)) $bestSeller[] = $row;
     }
-
-    // ── Ambil kd_order pelanggan untuk tambah keranjang ──
-    $authPelanggan2 = $db->AuthPelanggan($_SESSION['username']);
-    $authUser2      = $db->AuthUser($_SESSION['username']);
-    $no_meja_db     = $authPelanggan2['no_meja'] ?? null;
-    $data_kd_dash   = null;
-    $tambahBerhasil = false; // FIX: flag redirect via JS
-
-    if ($no_meja_db) {
-        $sqlOrd = "SELECT kd_order FROM tb_order WHERE no_meja='$no_meja_db'";
-        $exeOrd = mysqli_query($con, $sqlOrd);
-        $dtoOrd = mysqli_fetch_assoc($exeOrd);
-        $data_kd_dash = $dtoOrd['kd_order'] ?? null;
-    }
-
-    // ── Handle tambah ke keranjang ──
-    if (isset($_POST['tambah_keranjang']) && $data_kd_dash) {
-        $menu_kd   = $_POST['menu_kd'];
-        $harga     = (int)$_POST['harga'];
-        $kd_user   = $authUser2['kd_user'] ?? null;
-        $status_detail      = "pending";
-        $autokodedetailTemp = $db->autokode("tb_detail_order_temporary", "kd_detail", "DM");
-        $autokodedetail     = $db->autokode("tb_detail_order", "kd_detail", "DM");
-
-        $sqlCek = "SELECT * FROM tb_detail_order_temporary WHERE menu_kd='$menu_kd' AND order_kd='$data_kd_dash'";
-        $exeCek = mysqli_query($con, $sqlCek);
-        $numCek = mysqli_num_rows($exeCek);
-        $dtaCek = mysqli_fetch_assoc($exeCek);
-
-        if ($numCek > 0) {
-            $newTotal    = $dtaCek['total'] + 1;
-            $newSubTotal = $dtaCek['sub_total'] + $harga;
-            $val = "total='$newTotal', sub_total='$newSubTotal'";
-            $db->update("tb_detail_order_temporary", $val, "menu_kd='$menu_kd' AND order_kd", $data_kd_dash, "");
-            $db->update("tb_detail_order", $val, "menu_kd='$menu_kd' AND order_kd", $data_kd_dash, "");
-        } else {
-            $valTemp = "'$autokodedetailTemp','$data_kd_dash','$kd_user','$menu_kd','','1','$harga','','','','$status_detail'";
-            $db->insert("tb_detail_order_temporary", $valTemp, "");
-            $valDetail = "'$autokodedetail','$data_kd_dash','$kd_user','$menu_kd','','1','$harga','','','','$status_detail'";
-            $db->insert("tb_detail_order", $valDetail, "");
-            $db->update("tb_order", "status_order='belum_bayar'", "kd_order", $data_kd_dash, "");
-        }
-        // FIX: set flag, redirect pakai JS di bawah (bukan header())
-        $tambahBerhasil = true;
-    }
 ?>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Nunito:wght@400;600;700;800;900&display=swap');
-
 :root {
     --brown-dark:  #3E1F00;
     --brown-mid:   #7B3F00;
@@ -79,7 +32,6 @@
     --cream-dark:  #EDE0CC;
     --gold:        #C8973A;
     --text-dark:   #2C1A0E;
-    --text-mid:    #6B4226;
     --text-muted:  #A07850;
     --radius-sm:   10px;
     --radius-md:   16px;
@@ -88,60 +40,43 @@
     --shadow-md:   0 6px 24px rgba(62,31,0,0.13);
     --shadow-lg:   0 12px 40px rgba(62,31,0,0.2);
 }
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Nunito', sans-serif; background: var(--cream); color: var(--text-dark); }
-
-/* TOPBAR */
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Nunito',sans-serif; background:var(--cream); color:var(--text-dark); }
 .pg-topbar { position:sticky; top:0; z-index:100; background:var(--brown-dark); padding:12px 18px; display:flex; align-items:center; gap:10px; box-shadow:0 3px 20px rgba(62,31,0,0.4); }
 .pg-topbar .app-name { font-family:'Lora',serif; font-size:19px; font-weight:700; color:var(--gold); flex:1; letter-spacing:.3px; }
 .topbar-btn { width:36px; height:36px; border-radius:50%; border:none; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; color:var(--cream); text-decoration:none; position:relative; transition:background .2s; }
 .topbar-btn:hover { background:rgba(200,151,58,0.3); color:var(--gold); }
 .cart-badge { position:absolute; top:-3px; right:-3px; background:var(--gold); color:var(--brown-dark); font-size:9px; font-weight:900; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid var(--brown-dark); }
-
-/* HERO */
 .pg-hero { margin:14px 14px 0; border-radius:var(--radius-lg); overflow:hidden; position:relative; height:170px; background:linear-gradient(135deg,rgba(62,31,0,.8),rgba(123,63,0,.55)),url('images/bg3.jpg') center/cover no-repeat; display:flex; flex-direction:column; justify-content:flex-end; padding:18px 20px; }
 .pg-hero::before { content:''; position:absolute; inset:0; background:linear-gradient(to top,rgba(62,31,0,.85) 0%,transparent 65%); }
 .pg-hero h1 { font-family:'Lora',serif; font-size:23px; color:#fff; line-height:1.3; position:relative; z-index:1; }
 .pg-hero p { font-size:12px; color:rgba(255,255,255,.75); margin-top:4px; position:relative; z-index:1; }
 .meja-badge { position:absolute; top:12px; right:12px; background:var(--gold); color:var(--brown-dark); font-size:11px; font-weight:900; padding:4px 12px; border-radius:20px; z-index:1; box-shadow:0 3px 12px rgba(200,151,58,0.45); }
-
-/* SEARCH */
 .pg-search { margin:12px 14px 0; position:relative; }
 .pg-search input { width:100%; padding:11px 16px 11px 40px; border-radius:50px; border:2px solid var(--cream-dark); background:#fff; font-family:'Nunito',sans-serif; font-size:13px; outline:none; color:var(--text-dark); transition:border .2s; box-shadow:var(--shadow-sm); }
 .pg-search input:focus { border-color:var(--brown-light); }
 .pg-search input::placeholder { color:var(--text-muted); }
 .pg-search .si { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:14px; }
-
-/* GREETING */
 .greeting-strip { margin:12px 14px 0; background:linear-gradient(135deg,var(--brown-warm),var(--brown-mid)); border-radius:var(--radius-md); padding:13px 16px; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow-md); }
 .greeting-strip .g-icon { font-size:24px; flex-shrink:0; }
 .greeting-strip h5 { font-size:14px; font-weight:800; color:#fff; margin-bottom:2px; }
 .greeting-strip p  { font-size:11px; color:rgba(255,255,255,.75); }
-
-/* SECTION TITLE */
 .sec-title { padding:18px 14px 10px; display:flex; align-items:center; gap:10px; }
 .sec-title h2 { font-family:'Lora',serif; font-size:17px; font-weight:700; color:var(--brown-dark); white-space:nowrap; }
 .sec-title .divider { height:1.5px; flex:1; background:linear-gradient(to right,var(--cream-dark),transparent); border-radius:2px; }
-
-/* BEST SELLER */
 .bs-scroll { display:flex; gap:10px; overflow-x:auto; padding:0 14px 10px; scrollbar-width:none; }
 .bs-scroll::-webkit-scrollbar { display:none; }
-.bs-card { flex:0 0 130px; border-radius:var(--radius-md); overflow:hidden; background:#fff; box-shadow:var(--shadow-sm); border:1.5px solid var(--cream-dark); display:flex; flex-direction:column; transition:transform .2s,box-shadow .2s; animation:fadeUp .4s ease both; }
-.bs-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); border-color:var(--brown-light); }
+.bs-card { flex:0 0 130px; border-radius:var(--radius-md); overflow:hidden; background:#fff; box-shadow:var(--shadow-sm); border:1.5px solid var(--cream-dark); display:flex; flex-direction:column; transition:transform .2s,box-shadow .2s; animation:fadeUp .4s ease both; text-decoration:none; color:var(--text-dark); }
+.bs-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); border-color:var(--brown-light); text-decoration:none; color:var(--text-dark); }
 .bs-card img { width:100%; height:90px; object-fit:cover; display:block; }
 .bs-ribbon { background:var(--gold); color:var(--brown-dark); font-size:9px; font-weight:900; text-align:center; padding:3px 0; letter-spacing:.5px; }
 .bs-body { padding:8px 9px 4px; flex:1; }
 .bs-body h6 { font-size:12px; font-weight:800; color:var(--text-dark); margin-bottom:4px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .bs-body .bs-harga { font-size:12px; font-weight:900; color:var(--brown-warm); }
 .bs-footer { padding:6px 9px 9px; }
-.bs-btn { display:block; width:100%; padding:7px; border:none; border-radius:9px; background:var(--brown-dark); color:var(--gold); font-family:'Nunito',sans-serif; font-size:11px; font-weight:900; cursor:pointer; text-align:center; transition:background .2s; }
-.bs-btn:hover { background:var(--brown-mid); }
-
-/* ORNAMENT */
+.bs-btn { display:block; width:100%; padding:7px; border:none; border-radius:9px; background:var(--brown-dark); color:var(--gold); font-family:'Nunito',sans-serif; font-size:11px; font-weight:900; text-align:center; transition:background .2s; text-decoration:none; }
+.bs-btn:hover { background:var(--brown-mid); color:var(--gold); text-decoration:none; }
 .ornament { text-align:center; padding:6px 0 0; font-size:13px; color:var(--brown-light); letter-spacing:8px; opacity:.5; }
-
-/* KATEGORI SCROLL */
 .kat-scroll { display:flex; gap:12px; overflow-x:auto; padding:0 14px 90px; scrollbar-width:none; }
 .kat-scroll::-webkit-scrollbar { display:none; }
 .kat-chip { flex:0 0 140px; border-radius:var(--radius-md); overflow:hidden; background:#fff; box-shadow:var(--shadow-sm); text-decoration:none; color:var(--text-dark); border:1.5px solid var(--cream-dark); transition:transform .2s,box-shadow .2s; animation:fadeUp .4s ease both; display:block; }
@@ -151,37 +86,15 @@ body { font-family: 'Nunito', sans-serif; background: var(--cream); color: var(-
 .kat-chip .chip-body h6 { font-size:12px; font-weight:800; color:var(--text-dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:6px; }
 .kat-chip .chip-btn { display:block; text-align:center; background:var(--brown-dark); color:var(--gold); font-size:11px; font-weight:800; padding:6px; border-radius:8px; text-decoration:none; transition:background .2s; }
 .kat-chip .chip-btn:hover { background:var(--brown-mid); }
-
-/* TOAST */
-.toast-notif { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:var(--brown-dark); color:var(--gold); padding:10px 24px; border-radius:50px; font-size:13px; font-weight:800; box-shadow:var(--shadow-md); z-index:999; opacity:0; transition:opacity .3s; pointer-events:none; white-space:nowrap; border:1px solid var(--gold); }
-.toast-notif.show { opacity:1; }
-
 @keyframes fadeUp { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
 </style>
-
-<!-- FIX: Redirect pakai JS setelah HTML siap, bukan header() -->
-<?php if ($tambahBerhasil): ?>
-<script>
-    // Tampilkan toast dulu baru reload
-    window.addEventListener('load', function() {
-        var t = document.getElementById('toastNotif');
-        if (t) {
-            t.classList.add('show');
-            setTimeout(function(){ window.location.href = '?page=dashboard'; }, 1200);
-        }
-    });
-</script>
-<?php endif; ?>
-
-<!-- TOAST -->
-<div class="toast-notif" id="toastNotif">🛒 Ditambahkan ke keranjang!</div>
 
 <!-- TOPBAR -->
 <div class="pg-topbar">
     <span class="app-name">🍛 Dapur Nusantara</span>
     <a href="?page=transaksi" class="topbar-btn">
         <i class="fa fa-shopping-basket"></i>
-        <span class="cart-badge" id="cartCount"><?= $num3 ?? 0 ?></span>
+        <span class="cart-badge"><?= $num3 ?? 0 ?></span>
     </a>
 </div>
 
@@ -215,7 +128,9 @@ body { font-family: 'Nunito', sans-serif; background: var(--cream); color: var(-
 </div>
 <div class="bs-scroll">
     <?php foreach ($bestSeller as $i => $bs): ?>
-    <div class="bs-card" style="animation-delay:<?= $i * 0.07 ?>s">
+    <!-- FIX: tambah &from=dashboard agar tombol back di detail_menu ke halaman awal -->
+    <a href="?page=detail_menu&kategori=<?= htmlspecialchars($bs['kategori_id']) ?>&kd=<?= htmlspecialchars($bs['kd_menu']) ?>&from=dashboard"
+       class="bs-card" style="animation-delay:<?= $i * 0.07 ?>s">
         <img src="img/<?= htmlspecialchars($bs['photo']) ?>"
              alt="<?= htmlspecialchars($bs['name_menu']) ?>"
              onerror="this.src='images/icon/logo-blue.png'">
@@ -225,15 +140,9 @@ body { font-family: 'Nunito', sans-serif; background: var(--cream); color: var(-
             <div class="bs-harga">Rp <?= number_format($bs['harga'], 0, ',', '.') ?></div>
         </div>
         <div class="bs-footer">
-            <form method="post">
-                <input type="hidden" name="menu_kd" value="<?= $bs['kd_menu'] ?>">
-                <input type="hidden" name="harga"   value="<?= $bs['harga'] ?>">
-                <button type="submit" name="tambah_keranjang" class="bs-btn">
-                    + Keranjang
-                </button>
-            </form>
+            <span class="bs-btn">Pesan →</span>
         </div>
-    </div>
+    </a>
     <?php endforeach; ?>
 </div>
 <div class="ornament">✦ ✦ ✦</div>
@@ -258,11 +167,3 @@ body { font-family: 'Nunito', sans-serif; background: var(--cream); color: var(-
     </a>
     <?php endforeach; ?>
 </div>
-
-<script>
-function showToast() {
-    var t = document.getElementById('toastNotif');
-    t.classList.add('show');
-    setTimeout(function(){ t.classList.remove('show'); }, 2000);
-}
-</script>

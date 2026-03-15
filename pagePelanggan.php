@@ -3,13 +3,45 @@
     $id = new Resto();
     session_start();
 
+    // ── Handle logout ──
     if (isset($_GET['logout'])) {
-        $id->logout2();
+        global $con;
+        $username = $_SESSION['username'] ?? null;
+
+        if ($username) {
+            // 1. Hapus dari tb_pelanggan (pakai name_pelanggan)
+            $sqlDelPelanggan = "DELETE FROM tb_pelanggan WHERE name_pelanggan = '$username'";
+            mysqli_query($con, $sqlDelPelanggan);
+
+            // 2. Cari kd_user — coba username lowercase ATAU name
+            $usernameLC = strtolower($username);
+            $sqlUser    = "SELECT kd_user FROM tb_user
+                           WHERE username = '$usernameLC'
+                              OR username = '$username'
+                              OR name = '$username'
+                           LIMIT 1";
+            $exeUser = mysqli_query($con, $sqlUser);
+            $dtoUser = mysqli_fetch_assoc($exeUser);
+            $kd_user = $dtoUser['kd_user'] ?? null;
+
+            if ($kd_user) {
+                // 3. Reset status meja jadi non-active
+                $sqlMeja = "UPDATE tb_meja SET status='non-active', user_kd='' WHERE user_kd='$kd_user'";
+                mysqli_query($con, $sqlMeja);
+
+                // 4. Hapus dari tb_user
+                $sqlDelUser = "DELETE FROM tb_user WHERE kd_user='$kd_user'";
+                mysqli_query($con, $sqlDelUser);
+            }
+        }
+
+        session_destroy();
+        header("Location: index.php");
         exit();
     }
 
-    $auth     = $id->AuthUser($_SESSION['username']);
-    $auth2    = $id->AuthPelanggan($_SESSION['username']);
+    $auth          = $id->AuthUser($_SESSION['username']);
+    $auth2         = $id->AuthPelanggan($_SESSION['username']);
     $sessionStatus = $id->sessionCheck();
 
     if ($sessionStatus == "false") { header("Location:index.php"); exit(); }
@@ -38,32 +70,6 @@
         $data_kd3 = $dta4['status_order'] ?? null;
     }
 
-    if (isset($_GET['delete'])) {
-        if ($data_kd3 == "belum_beli") { ?>
-            <script src="vendor/jquery-3.2.1.min.js"></script>
-            <script src="js/sweetalert.min.js"></script>
-            <script>
-            $(document).ready(function(){
-                swal({ title:"Tidak Order?", text:"Anda belum membeli apapun", type:"warning",
-                    showCancelButton:true, confirmButtonText:"Ya, Tidak Beli", cancelButtonText:"Beli",
-                    closeOnConfirm:false, closeOnCancel:true
-                }, function(isConfirm){
-                    if(isConfirm){ <?php $response=$id->delete("tb_order","kd_order",$_GET['kd'],"?page=dashboard"); $id->logout2(); ?> }
-                    else { window.location.href="?"; }
-                });
-            });
-            </script>
-        <?php
-        } elseif ($data_kd2 == "pending" || $data_kd2 == "dimasak") {
-            $response = ['response'=>'negative','alert'=>'Pesanan anda belum sampai'];
-        } elseif ($data_kd2 == "siap" || $data_kd2 == "diambil") {
-            $response = $id->delete("tb_detail_order_temporary","order_kd",$_GET['kd'],"?page=dashboard");
-            $id->logout2();
-        } else {
-            $response = ['response'=>'negative','alert'=>'Tidak ada pesanan aktif'];
-        }
-    }
-
     @$page = $_GET['page'];
     if (!$page) $page = 'dashboard';
 ?>
@@ -85,14 +91,13 @@
     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css">
     <style>
         :root {
-            --brown-dark:  #3E1F00;
-            --brown-mid:   #7B3F00;
-            --brown-warm:  #A0522D;
-            --gold:        #C8973A;
-            --cream:       #FDF6EC;
-            --cream-dark:  #EDE0CC;
+            --brown-dark: #3E1F00;
+            --brown-mid:  #7B3F00;
+            --brown-warm: #A0522D;
+            --gold:       #C8973A;
+            --cream:      #FDF6EC;
+            --cream-dark: #EDE0CC;
         }
-
         body { background-color: var(--cream) !important; }
         .header-desktop4 { display: none !important; }
         .page-wrapper { padding-top: 0 !important; }
@@ -119,9 +124,7 @@
             background: none; border: none; padding: 2px 10px;
             transition: color .2s; min-width: 64px;
         }
-        .nav-item:hover, .nav-item.active {
-            color: var(--gold); text-decoration: none;
-        }
+        .nav-item:hover, .nav-item.active { color: var(--gold); text-decoration: none; }
         .nav-item svg { width: 24px; height: 24px; display: block; margin: 0 auto 2px; }
         .nav-item svg path { fill: rgba(255,255,255,0.4); transition: fill .2s; }
         .nav-item.active svg path { fill: var(--gold); }
@@ -135,22 +138,6 @@
             width: 16px; height: 16px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             border: 2px solid var(--brown-dark);
-        }
-
-        /* ── FLOATING SELESAI ORDER ── */
-        .btn-selesai {
-            position: fixed; bottom: 75px; right: 16px; z-index: 150;
-            background: linear-gradient(135deg, var(--brown-warm), var(--brown-dark));
-            color: var(--gold); border: 1.5px solid var(--gold);
-            border-radius: 50px; padding: 11px 18px;
-            font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 13px;
-            box-shadow: 0 6px 24px rgba(62,31,0,0.4); cursor: pointer;
-            display: flex; align-items: center; gap: 7px;
-            transition: transform .15s, box-shadow .15s;
-        }
-        .btn-selesai:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 32px rgba(62,31,0,0.5);
         }
     </style>
 </head>
@@ -171,16 +158,6 @@
         ?>
         <div class="pg-copyright">Copyright © 2026 Dapur Nusantara. All rights reserved.</div>
     </div>
-
-    <!-- Floating Selesai Order -->
-    <?php if (!in_array($page, ['transaksi','checkout'])): ?>
-    <button class="btn-selesai" id="btdelete">
-        <svg viewBox="0 0 24 24" style="width:15px;height:15px;">
-            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="currentColor"/>
-        </svg>
-        Selesai Order
-    </button>
-    <?php endif; ?>
 
     <!-- ── BOTTOM NAVIGATION ── -->
     <nav class="bottom-nav">
@@ -236,29 +213,21 @@
 <script src="js/main.js"></script>
 <script src="js/sweetalert.min.js"></script>
 <script>
-$('#btdelete').click(function(e){
-    e.preventDefault();
-    swal({ title:"Selesai Order?", text:"Yakin ingin mengakhiri sesi order?", type:"warning",
-        showCancelButton:true, confirmButtonText:"Ya, Selesai", cancelButtonText:"Batal",
-        closeOnConfirm:false, closeOnCancel:true
-    }, function(isConfirm){
-        if(isConfirm){
-            <?php if($data_kd): ?>
-            window.location.href="?page=dashboard&delete&kd=<?= $data_kd ?>";
-            <?php else: ?>
-            swal("Info","Tidak ada pesanan aktif.","info");
-            <?php endif; ?>
-        }
-    });
-});
-
 $('#btnLogout').click(function(e){
     e.preventDefault();
-    swal({ title:"Keluar?", text:"Yakin ingin logout?", type:"warning",
-        showCancelButton:true, confirmButtonText:"Ya, Keluar", cancelButtonText:"Batal",
-        closeOnConfirm:false, closeOnCancel:true
+    swal({
+        title: "Keluar?",
+        text: "Yakin ingin mengakhiri sesi?",
+        type: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Ya, Keluar",
+        cancelButtonText: "Batal",
+        closeOnConfirm: false,
+        closeOnCancel: true
     }, function(isConfirm){
-        if(isConfirm){ window.location.href="?logout=true"; }
+        if (isConfirm) {
+            window.location.href = "?logout=true";
+        }
     });
 });
 
