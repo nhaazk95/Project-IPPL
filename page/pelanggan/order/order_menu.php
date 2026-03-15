@@ -7,8 +7,8 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700&display=swap');
 :root {
-    --primary: #FF6B35;
-    --primary-dk: #e85520;
+    --primary: #af502e;
+    --primary-dk: #6f2c13;
     --bg: #F7F5F2;
     --card-bg: #FFFFFF;
     --text-main: #1a1a1a;
@@ -17,6 +17,9 @@
     --shadow: 0 4px 24px rgba(0,0,0,0.08);
     --shadow-lg: 0 8px 40px rgba(255,107,53,0.18);
 }
+
+.om-header a:hover { background: #EDE0CC; color: #A0522D; }
+
 .om-wrap { padding: 16px 16px 0; font-family: 'Nunito', sans-serif; }
 .om-header {
     display: flex;

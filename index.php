@@ -1,159 +1,174 @@
+<?php
+    include "config/controller.php";
+    session_start();
+    $lg            = new resto();
+    $table         = "tb_user";
+    $autokode      = $lg->autokode($table, "kd_user", "US");
+    $autokode2     = $lg->autokode("tb_pelanggan", "kd_pelanggan", "PG");
+    $autokodeOrder = $lg->autokode("tb_order", "kd_order", "TR");
+    $date          = date("Y-m-d");
+
+    if ($lg->sessionCheck() == "true") {
+        if (@$_SESSION['level'] == "Pelanggan") {
+            header("location:pagePelanggan.php");
+            exit();
+        }
+    }
+
+    if (isset($_POST['btnLogin'])) {
+        $username = trim($_POST['username']);
+        $password = trim($_POST['password']);
+
+        if ($username == "" || $password == "") {
+            $response = ['response' => 'negative', 'alert' => 'Lengkapi Field !!!'];
+        } else {
+            $kd_pelanggan = $autokode2;
+            $kd_user      = $autokode;
+            $nama_user    = $username;
+            $email        = "pelanggan@gmail.com";
+            $username2    = strtolower($username);
+            $level        = "Pelanggan";
+            $status       = "belum_beli";
+            $redirect     = "pagePelanggan.php";
+
+            $select  = $lg->selectWhere2("tb_meja", "no_meja", $password, "status", "active");
+            $select2 = $lg->selectWhere2("tb_meja", "no_meja", $password, "status", "non-active");
+
+            if ($select == 1) {
+                $response = ['response' => 'negative', 'alert' => 'No meja ini telah digunakan'];
+
+            } elseif ($select2 == 1) {
+                // FIX: Simpan session SETELAH semua insert berhasil
+                $reg = $lg->register_pelanggan($kd_user, $nama_user, $email, $username2, $password, $level, $redirect);
+
+                if ($reg['response'] == 'negative') {
+                    $response = $reg;
+                } else {
+                    // Insert tb_pelanggan
+                    $value    = "'$kd_pelanggan', '$username', '$password'";
+                    $resPelanggan = $lg->insert("tb_pelanggan", $value, $redirect);
+
+                    if ($resPelanggan['response'] == 'negative') {
+                        // Rollback: hapus user yang tadi diinsert
+                        $lg->delete("tb_user", "kd_user", $kd_user, "");
+                        $response = ['response' => 'negative', 'alert' => 'Gagal menyimpan data pelanggan, coba lagi'];
+                    } else {
+                        // Insert tb_order
+                        $valueOrder = "'$autokodeOrder', '$password', null, '$nama_user', '$kd_user', '', '$status', '$date'";
+                        $resOrder   = $lg->insert("tb_order", $valueOrder, $redirect);
+
+                        if ($resOrder['response'] == 'negative') {
+                            // Rollback: hapus pelanggan & user yang tadi diinsert
+                            $lg->delete("tb_pelanggan", "kd_pelanggan", $kd_pelanggan, "");
+                            $lg->delete("tb_user", "kd_user", $kd_user, "");
+                            $response = ['response' => 'negative', 'alert' => 'Gagal membuat order, coba lagi'];
+                        } else {
+                            // Update status meja
+                            $status_meja = "active";
+                            $valueMeja   = "user_kd='$kd_user', status='$status_meja'";
+                            $lg->update("tb_meja", $valueMeja, "no_meja", $password, $redirect);
+
+                            // FIX: Set session SETELAH semua data berhasil diinsert
+                            $_SESSION['username'] = $username;
+                            $_SESSION['level']    = $level;
+
+                            $response = ['response' => 'positive', 'alert' => 'Login Berhasil', 'redirect' => $redirect];
+                        }
+                    }
+                }
+
+            } elseif ($select == 0 && $select2 == 0) {
+                $response = ['response' => 'negative', 'alert' => 'No meja tidak terdaftar, silahkan cek no meja kembali'];
+            }
+        }
+    }
+?>
 <!DOCTYPE html>
-<html lang="id">
-<head>
-
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>Login Pelanggan</title>
-
-<link href="vendor/bootstrap-4.1/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="css/sweet-alert.css">
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
-<style>
-
-body{
-background:#EDE9E3;
-font-family:'Inter',sans-serif;
-height:100vh;
-display:flex;
-align-items:center;
-justify-content:center;
-}
-
-.login-container{
-width:420px;
-background:#F7F5F2;
-padding:40px;
-border-radius:14px;
-box-shadow:0 6px 30px rgba(0,0,0,0.08);
-}
-
-.login-small{
-color:#d35f2e;
-font-size:12px;
-letter-spacing:2px;
-font-weight:600;
-margin-bottom:10px;
-}
-
-.login-title{
-font-size:25px;
-font-weight:600;
-margin-bottom:5px;
-color:#2d2a26;
-}
-
-.login-desc{
-font-size:14px;
-color:#7a756f;
-margin-bottom:25px;
-}
-
-label{
-font-size:12px;
-font-weight:600;
-letter-spacing:1px;
-color:#7a756f;
-margin-bottom:6px;
-}
-
-.form-control{
-height:48px;
-border-radius:10px;
-border:1px solid #e2ddd7;
-background:#faf9f7;
-}
-
-.form-control:focus{
-box-shadow:none;
-border-color:#d35f2e;
-}
-
-.btn-login{
-background:#1e1a17;
-color:white;
-height:48px;
-border-radius:10px;
-font-weight:500;
-transition:0.2s;
-}
-
-.btn-login:hover{
-background:#000;
-}
-
-.extra{
-text-align:center;
-margin-top:20px;
-font-size:13px;
-color:#777;
-}
-
-.extra a{
-color:#d35f2e;
-font-weight:500;
-text-decoration:none;
-}
-
-</style>
-
-</head>
-
-<body>
-
-<div class="login-container">
-
-<div class="login-small">
-— LOGIN PELANGGAN
-</div>
-
-<div class="login-title">
-Masuk untuk memesan makanan Anda
-</div>
-
-<div class="login-desc">
-Gunakan nama dan nomor meja untuk mulai memesan makanan.
-</div>
-
-<form method="POST">
-
-<div class="form-group">
-<label>NAMA LENGKAP</label>
-<input 
-type="text"
-name="username"
-class="form-control"
-placeholder="Nama"
-value="<?=@$_POST['username']?>"
-required>
-</div>
-
-<div class="form-group">
-<label>NOMOR MEJA</label>
-<input 
-type="number"
-name="password"
-class="form-control"
-placeholder="Nomor Meja"
-required>
-</div>
-
-<br>
-
-<button name="btnLogin" class="btn btn-login btn-block">
-Masuk Sekarang →
-</button>
-
-</div>
-
-<script src="vendor/jquery-3.2.1.min.js"></script>
-<script src="vendor/bootstrap-4.1/bootstrap.min.js"></script>
-<script src="js/sweetalert.min.js"></script>
-
-<?php include "config/alert.php"; ?>
-
-</body>
+<html lang="en">
+    <head>
+        <!-- Required meta tags-->
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <meta name="description" content="au theme template">
+        <meta name="author" content="Hau Nguyen">
+        <meta name="keywords" content="au theme template">
+        <!-- Title Page-->
+        <title>Halaman Login</title>
+        <!-- Fontfaces CSS-->
+        <link href="css/font-face.css" rel="stylesheet" media="all">
+        <link href="vendor/font-awesome-4.7/css/font-awesome.min.css" rel="stylesheet" media="all">
+        <link href="vendor/font-awesome-5/css/fontawesome-all.min.css" rel="stylesheet" media="all">
+        <link href="vendor/mdi-font/css/material-design-iconic-font.min.css" rel="stylesheet" media="all">
+        <!-- Bootstrap CSS-->
+        <link href="vendor/bootstrap-4.1/bootstrap.min.css" rel="stylesheet" media="all">
+        <!-- Vendor CSS-->
+        <link href="vendor/animsition/animsition.min.css" rel="stylesheet" media="all">
+        <link href="vendor/bootstrap-progressbar/bootstrap-progressbar-3.3.4.min.css" rel="stylesheet" media="all">
+        <link href="vendor/wow/animate.css" rel="stylesheet" media="all">
+        <link href="vendor/css-hamburgers/hamburgers.min.css" rel="stylesheet" media="all">
+        <link href="vendor/slick/slick.css" rel="stylesheet" media="all">
+        <link href="vendor/select2/select2.min.css" rel="stylesheet" media="all">
+        <link href="vendor/perfect-scrollbar/perfect-scrollbar.css" rel="stylesheet" media="all">
+        <!-- Main CSS-->
+        <link href="css/theme.css" rel="stylesheet" media="all">
+        <link rel="stylesheet" href="css/sweet-alert.css">
+    </head>
+    <body class="animsition" style="background: linear-gradient( rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5) ), url('images/bg3.jpg') no-repeat; background-size: cover;">
+        <div class="page-wrapper">
+            <div class="container">
+                <br><br><br>
+                <div class="login-wrap">
+                    <div class="login-content">
+                        <div class="login-logo">
+                            <a href="#">
+                                <img src="images/icon/logo.png" alt="CoolAdmin">
+                            </a>
+                        </div>
+                        <div class="login-form">
+                            <form action="" method="post">
+                                <div class="form-group">
+                                    <label>Nama Lengkap</label>
+                                    <input autocomplete="off" value="<?=@$_POST['username']?>" class="au-input au-input--full" type="text" name="username" placeholder="Nama Lengkap Anda">
+                                </div>
+                                <div class="form-group">
+                                    <label>No Meja</label>
+                                    <input class="au-input au-input--full" type="number" name="password" placeholder="Gunakan nomor meja sebagai password anda untuk login">
+                                </div>
+                                <div class="login-checkbox">
+                                    <label>
+                                        <input type="checkbox" name="remember">Remember Me
+                                    </label>
+                                    <label>
+                                        <a href="#">Forgotten Password?</a>
+                                    </label>
+                                </div>
+                                <br>
+                                <button name="btnLogin" class="au-btn au-btn--block au-btn--green m-b-20" type="submit">sign in</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Jquery JS-->
+        <script src="vendor/jquery-3.2.1.min.js"></script>
+        <!-- Bootstrap JS-->
+        <script src="vendor/bootstrap-4.1/popper.min.js"></script>
+        <script src="vendor/bootstrap-4.1/bootstrap.min.js"></script>
+        <!-- Vendor JS -->
+        <script src="vendor/slick/slick.min.js"></script>
+        <script src="vendor/wow/wow.min.js"></script>
+        <script src="vendor/animsition/animsition.min.js"></script>
+        <script src="vendor/bootstrap-progressbar/bootstrap-progressbar.min.js"></script>
+        <script src="vendor/counter-up/jquery.waypoints.min.js"></script>
+        <script src="vendor/counter-up/jquery.counterup.min.js"></script>
+        <script src="vendor/circle-progress/circle-progress.min.js"></script>
+        <script src="vendor/perfect-scrollbar/perfect-scrollbar.js"></script>
+        <script src="vendor/chartjs/Chart.bundle.min.js"></script>
+        <script src="vendor/select2/select2.min.js"></script>
+        <script src="js/sweetalert.min.js"></script>
+        <!-- Main JS-->
+        <script src="js/main.js"></script>
+        <?php include "config/alert.php";?>
+    </body>
 </html>

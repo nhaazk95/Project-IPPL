@@ -1,440 +1,268 @@
 <?php
+    global $con;
     $db    = new Resto();
     $table = "tb_kategori";
     $data  = $db->select($table);
-    // FIX: Pakai $auth2 dari pagePelanggan.php, tidak perlu query ulang
-?>
 
+    // ── Best Seller: menu paling banyak dipesan ──
+    $sqlBS = "SELECT m.*, SUM(d.total) as total_terjual
+              FROM tb_menu m
+              JOIN tb_detail_order d ON m.kd_menu = d.menu_kd
+              WHERE m.status = 'tersedia'
+              GROUP BY m.kd_menu
+              ORDER BY total_terjual DESC
+              LIMIT 6";
+    $exeBS      = mysqli_query($con, $sqlBS);
+    $bestSeller = [];
+    if ($exeBS) while ($row = mysqli_fetch_assoc($exeBS)) $bestSeller[] = $row;
+
+    // Fallback: kalau belum ada data order, ambil 6 menu pertama
+    if (count($bestSeller) == 0) {
+        $exeF = mysqli_query($con, "SELECT * FROM tb_menu WHERE status='tersedia' LIMIT 6");
+        if ($exeF) while ($row = mysqli_fetch_assoc($exeF)) $bestSeller[] = $row;
+    }
+
+    // ── Ambil kd_order pelanggan untuk tambah keranjang ──
+    $authPelanggan2 = $db->AuthPelanggan($_SESSION['username']);
+    $authUser2      = $db->AuthUser($_SESSION['username']);
+    $no_meja_db     = $authPelanggan2['no_meja'] ?? null;
+    $data_kd_dash   = null;
+    $tambahBerhasil = false; // FIX: flag redirect via JS
+
+    if ($no_meja_db) {
+        $sqlOrd = "SELECT kd_order FROM tb_order WHERE no_meja='$no_meja_db'";
+        $exeOrd = mysqli_query($con, $sqlOrd);
+        $dtoOrd = mysqli_fetch_assoc($exeOrd);
+        $data_kd_dash = $dtoOrd['kd_order'] ?? null;
+    }
+
+    // ── Handle tambah ke keranjang ──
+    if (isset($_POST['tambah_keranjang']) && $data_kd_dash) {
+        $menu_kd   = $_POST['menu_kd'];
+        $harga     = (int)$_POST['harga'];
+        $kd_user   = $authUser2['kd_user'] ?? null;
+        $status_detail      = "pending";
+        $autokodedetailTemp = $db->autokode("tb_detail_order_temporary", "kd_detail", "DM");
+        $autokodedetail     = $db->autokode("tb_detail_order", "kd_detail", "DM");
+
+        $sqlCek = "SELECT * FROM tb_detail_order_temporary WHERE menu_kd='$menu_kd' AND order_kd='$data_kd_dash'";
+        $exeCek = mysqli_query($con, $sqlCek);
+        $numCek = mysqli_num_rows($exeCek);
+        $dtaCek = mysqli_fetch_assoc($exeCek);
+
+        if ($numCek > 0) {
+            $newTotal    = $dtaCek['total'] + 1;
+            $newSubTotal = $dtaCek['sub_total'] + $harga;
+            $val = "total='$newTotal', sub_total='$newSubTotal'";
+            $db->update("tb_detail_order_temporary", $val, "menu_kd='$menu_kd' AND order_kd", $data_kd_dash, "");
+            $db->update("tb_detail_order", $val, "menu_kd='$menu_kd' AND order_kd", $data_kd_dash, "");
+        } else {
+            $valTemp = "'$autokodedetailTemp','$data_kd_dash','$kd_user','$menu_kd','','1','$harga','','','','$status_detail'";
+            $db->insert("tb_detail_order_temporary", $valTemp, "");
+            $valDetail = "'$autokodedetail','$data_kd_dash','$kd_user','$menu_kd','','1','$harga','','','','$status_detail'";
+            $db->insert("tb_detail_order", $valDetail, "");
+            $db->update("tb_order", "status_order='belum_bayar'", "kd_order", $data_kd_dash, "");
+        }
+        // FIX: set flag, redirect pakai JS di bawah (bukan header())
+        $tambahBerhasil = true;
+    }
+?>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Playfair+Display:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Nunito:wght@400;600;700;800;900&display=swap');
 
 :root {
-    --primary:    #FF6B35;
-    --primary-dk: #e85520;
-    --secondary:  #2D2D2D;
-    --bg:         #F7F5F2;
-    --card-bg:    #FFFFFF;
-    --text-main:  #1a1a1a;
-    --text-muted: #888;
-    --radius:     18px;
-    --shadow:     0 4px 24px rgba(0,0,0,0.08);
-    --shadow-lg:  0 8px 40px rgba(255,107,53,0.18);
+    --brown-dark:  #3E1F00;
+    --brown-mid:   #7B3F00;
+    --brown-warm:  #A0522D;
+    --brown-light: #C4956A;
+    --cream:       #FDF6EC;
+    --cream-dark:  #EDE0CC;
+    --gold:        #C8973A;
+    --text-dark:   #2C1A0E;
+    --text-mid:    #6B4226;
+    --text-muted:  #A07850;
+    --radius-sm:   10px;
+    --radius-md:   16px;
+    --radius-lg:   22px;
+    --shadow-sm:   0 2px 12px rgba(62,31,0,0.08);
+    --shadow-md:   0 6px 24px rgba(62,31,0,0.13);
+    --shadow-lg:   0 12px 40px rgba(62,31,0,0.2);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Nunito', sans-serif; background: var(--cream); color: var(--text-dark); }
 
-body {
-    font-family: 'Nunito', sans-serif;
-    background: var(--bg);
-    color: var(--text-main);
-}
+/* TOPBAR */
+.pg-topbar { position:sticky; top:0; z-index:100; background:var(--brown-dark); padding:12px 18px; display:flex; align-items:center; gap:10px; box-shadow:0 3px 20px rgba(62,31,0,0.4); }
+.pg-topbar .app-name { font-family:'Lora',serif; font-size:19px; font-weight:700; color:var(--gold); flex:1; letter-spacing:.3px; }
+.topbar-btn { width:36px; height:36px; border-radius:50%; border:none; background:rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; color:var(--cream); text-decoration:none; position:relative; transition:background .2s; }
+.topbar-btn:hover { background:rgba(200,151,58,0.3); color:var(--gold); }
+.cart-badge { position:absolute; top:-3px; right:-3px; background:var(--gold); color:var(--brown-dark); font-size:9px; font-weight:900; width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid var(--brown-dark); }
 
-/* ── TOP SEARCH BAR ── */
-.pg-topbar {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: var(--card-bg);
-    padding: 14px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-}
-.pg-topbar .app-name {
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    font-weight: 700;
-    color: var(--primary);
-    flex: 1;
-}
-.pg-topbar .search-btn,
-.pg-topbar .cart-btn {
-    width: 40px; height: 40px;
-    border-radius: 50%;
-    border: none;
-    background: var(--bg);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    font-size: 18px;
-    color: var(--secondary);
-    text-decoration: none;
-    position: relative;
-    transition: background .2s;
-}
-.pg-topbar .cart-btn:hover,
-.pg-topbar .search-btn:hover { background: #ffe8e0; color: var(--primary); }
-.cart-badge {
-    position: absolute;
-    top: -3px; right: -3px;
-    background: var(--primary);
-    color: #fff;
-    font-size: 10px;
-    font-weight: 800;
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    border: 2px solid #fff;
-}
+/* HERO */
+.pg-hero { margin:14px 14px 0; border-radius:var(--radius-lg); overflow:hidden; position:relative; height:170px; background:linear-gradient(135deg,rgba(62,31,0,.8),rgba(123,63,0,.55)),url('images/bg3.jpg') center/cover no-repeat; display:flex; flex-direction:column; justify-content:flex-end; padding:18px 20px; }
+.pg-hero::before { content:''; position:absolute; inset:0; background:linear-gradient(to top,rgba(62,31,0,.85) 0%,transparent 65%); }
+.pg-hero h1 { font-family:'Lora',serif; font-size:23px; color:#fff; line-height:1.3; position:relative; z-index:1; }
+.pg-hero p { font-size:12px; color:rgba(255,255,255,.75); margin-top:4px; position:relative; z-index:1; }
+.meja-badge { position:absolute; top:12px; right:12px; background:var(--gold); color:var(--brown-dark); font-size:11px; font-weight:900; padding:4px 12px; border-radius:20px; z-index:1; box-shadow:0 3px 12px rgba(200,151,58,0.45); }
 
-/* ── HERO BANNER ── */
-.pg-hero {
-    margin: 16px 16px 0;
-    border-radius: var(--radius);
-    overflow: hidden;
-    position: relative;
-    height: 180px;
-    background: linear-gradient(135deg, rgba(0,0,0,.55), rgba(0,0,0,.3)),
-                url('images/bg3.jpg') center/cover no-repeat;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 20px;
-}
-.pg-hero h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 26px;
-    color: #fff;
-    line-height: 1.2;
-}
-.pg-hero p {
-    font-size: 13px;
-    color: rgba(255,255,255,.8);
-    margin-top: 4px;
-}
-.pg-hero .meja-badge {
-    position: absolute;
-    top: 14px; right: 14px;
-    background: var(--primary);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 800;
-    padding: 5px 12px;
-    border-radius: 30px;
-    letter-spacing: .5px;
-    box-shadow: var(--shadow-lg);
-}
+/* SEARCH */
+.pg-search { margin:12px 14px 0; position:relative; }
+.pg-search input { width:100%; padding:11px 16px 11px 40px; border-radius:50px; border:2px solid var(--cream-dark); background:#fff; font-family:'Nunito',sans-serif; font-size:13px; outline:none; color:var(--text-dark); transition:border .2s; box-shadow:var(--shadow-sm); }
+.pg-search input:focus { border-color:var(--brown-light); }
+.pg-search input::placeholder { color:var(--text-muted); }
+.pg-search .si { position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:14px; }
 
-/* ── SEARCH BAR (inline) ── */
-.pg-search {
-    margin: 16px 16px 0;
-    position: relative;
-}
-.pg-search input {
-    width: 100%;
-    padding: 13px 20px 13px 46px;
-    border-radius: 50px;
-    border: 2px solid #eee;
-    background: var(--card-bg);
-    font-family: 'Nunito', sans-serif;
-    font-size: 14px;
-    outline: none;
-    transition: border .2s;
-}
-.pg-search input:focus { border-color: var(--primary); }
-.pg-search .search-icon {
-    position: absolute;
-    left: 16px; top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    font-size: 17px;
-}
+/* GREETING */
+.greeting-strip { margin:12px 14px 0; background:linear-gradient(135deg,var(--brown-warm),var(--brown-mid)); border-radius:var(--radius-md); padding:13px 16px; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow-md); }
+.greeting-strip .g-icon { font-size:24px; flex-shrink:0; }
+.greeting-strip h5 { font-size:14px; font-weight:800; color:#fff; margin-bottom:2px; }
+.greeting-strip p  { font-size:11px; color:rgba(255,255,255,.75); }
 
-/* ── SECTION TITLE ── */
-.pg-section-title {
-    padding: 22px 20px 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-.pg-section-title h2 {
-    font-size: 20px;
-    font-weight: 900;
-    color: var(--text-main);
-}
-.pg-section-title a {
-    font-size: 13px;
-    color: var(--primary);
-    font-weight: 700;
-    text-decoration: none;
-}
+/* SECTION TITLE */
+.sec-title { padding:18px 14px 10px; display:flex; align-items:center; gap:10px; }
+.sec-title h2 { font-family:'Lora',serif; font-size:17px; font-weight:700; color:var(--brown-dark); white-space:nowrap; }
+.sec-title .divider { height:1.5px; flex:1; background:linear-gradient(to right,var(--cream-dark),transparent); border-radius:2px; }
 
-/* ── KATEGORI HORIZONTAL SCROLL ── */
-.kategori-scroll {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    padding: 0 16px 10px;
-    scrollbar-width: none;
-}
-.kategori-scroll::-webkit-scrollbar { display: none; }
+/* BEST SELLER */
+.bs-scroll { display:flex; gap:10px; overflow-x:auto; padding:0 14px 10px; scrollbar-width:none; }
+.bs-scroll::-webkit-scrollbar { display:none; }
+.bs-card { flex:0 0 130px; border-radius:var(--radius-md); overflow:hidden; background:#fff; box-shadow:var(--shadow-sm); border:1.5px solid var(--cream-dark); display:flex; flex-direction:column; transition:transform .2s,box-shadow .2s; animation:fadeUp .4s ease both; }
+.bs-card:hover { transform:translateY(-3px); box-shadow:var(--shadow-md); border-color:var(--brown-light); }
+.bs-card img { width:100%; height:90px; object-fit:cover; display:block; }
+.bs-ribbon { background:var(--gold); color:var(--brown-dark); font-size:9px; font-weight:900; text-align:center; padding:3px 0; letter-spacing:.5px; }
+.bs-body { padding:8px 9px 4px; flex:1; }
+.bs-body h6 { font-size:12px; font-weight:800; color:var(--text-dark); margin-bottom:4px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.bs-body .bs-harga { font-size:12px; font-weight:900; color:var(--brown-warm); }
+.bs-footer { padding:6px 9px 9px; }
+.bs-btn { display:block; width:100%; padding:7px; border:none; border-radius:9px; background:var(--brown-dark); color:var(--gold); font-family:'Nunito',sans-serif; font-size:11px; font-weight:900; cursor:pointer; text-align:center; transition:background .2s; }
+.bs-btn:hover { background:var(--brown-mid); }
 
-.kat-card {
-    flex: 0 0 140px;
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: var(--card-bg);
-    box-shadow: var(--shadow);
-    text-decoration: none;
-    color: var(--text-main);
-    transition: transform .2s, box-shadow .2s;
-    display: block;
-}
-.kat-card:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    color: var(--text-main);
-    text-decoration: none;
-}
-.kat-card img {
-    width: 100%;
-    height: 90px;
-    object-fit: cover;
-    display: block;
-}
-.kat-card .kat-info {
-    padding: 10px 10px 12px;
-}
-.kat-card .kat-info h6 {
-    font-size: 13px;
-    font-weight: 800;
-    margin-bottom: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.kat-card .kat-info p {
-    font-size: 11px;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.kat-card .kat-footer {
-    padding: 0 10px 12px;
-}
-.kat-card .btn-lihat {
-    display: block;
-    text-align: center;
-    background: var(--primary);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 800;
-    padding: 7px;
-    border-radius: 10px;
-    text-decoration: none;
-    transition: background .2s;
-}
-.kat-card .btn-lihat:hover { background: var(--primary-dk); }
+/* ORNAMENT */
+.ornament { text-align:center; padding:6px 0 0; font-size:13px; color:var(--brown-light); letter-spacing:8px; opacity:.5; }
 
-/* ── SEMUA KATEGORI GRID ── */
-.all-kat-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
-    padding: 0 16px 24px;
-}
-.all-kat-item {
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: var(--card-bg);
-    box-shadow: var(--shadow);
-    text-decoration: none;
-    color: var(--text-main);
-    transition: transform .2s, box-shadow .2s;
-}
-.all-kat-item:hover {
-    transform: translateY(-4px);
-    box-shadow: var(--shadow-lg);
-    text-decoration: none;
-    color: var(--text-main);
-}
-.all-kat-item img {
-    width: 100%;
-    height: 120px;
-    object-fit: cover;
-    display: block;
-}
-.all-kat-item .kat-body {
-    padding: 12px;
-}
-.all-kat-item .kat-body h5 {
-    font-size: 14px;
-    font-weight: 800;
-    margin-bottom: 4px;
-}
-.all-kat-item .kat-body p {
-    font-size: 12px;
-    color: var(--text-muted);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-.all-kat-item .kat-action {
-    padding: 0 12px 14px;
-}
-.all-kat-item .btn-lihat2 {
-    display: block;
-    text-align: center;
-    background: var(--primary);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 800;
-    padding: 8px;
-    border-radius: 10px;
-    text-decoration: none;
-    transition: background .2s;
-}
-.all-kat-item .btn-lihat2:hover { background: var(--primary-dk); }
+/* KATEGORI SCROLL */
+.kat-scroll { display:flex; gap:12px; overflow-x:auto; padding:0 14px 90px; scrollbar-width:none; }
+.kat-scroll::-webkit-scrollbar { display:none; }
+.kat-chip { flex:0 0 140px; border-radius:var(--radius-md); overflow:hidden; background:#fff; box-shadow:var(--shadow-sm); text-decoration:none; color:var(--text-dark); border:1.5px solid var(--cream-dark); transition:transform .2s,box-shadow .2s; animation:fadeUp .4s ease both; display:block; }
+.kat-chip:hover { transform:translateY(-4px); box-shadow:var(--shadow-md); color:var(--text-dark); text-decoration:none; border-color:var(--brown-light); }
+.kat-chip img { width:100%; height:100px; object-fit:cover; display:block; }
+.kat-chip .chip-body { padding:8px 10px 10px; }
+.kat-chip .chip-body h6 { font-size:12px; font-weight:800; color:var(--text-dark); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:6px; }
+.kat-chip .chip-btn { display:block; text-align:center; background:var(--brown-dark); color:var(--gold); font-size:11px; font-weight:800; padding:6px; border-radius:8px; text-decoration:none; transition:background .2s; }
+.kat-chip .chip-btn:hover { background:var(--brown-mid); }
 
-/* ── INFO STRIP ── */
-.info-strip {
-    margin: 0 16px 16px;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dk));
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    color: #fff;
-    box-shadow: var(--shadow-lg);
-}
-.info-strip .info-icon {
-    font-size: 28px;
-    flex-shrink: 0;
-}
-.info-strip h5 {
-    font-size: 15px;
-    font-weight: 800;
-    margin-bottom: 2px;
-}
-.info-strip p {
-    font-size: 12px;
-    opacity: .85;
-}
+/* TOAST */
+.toast-notif { position:fixed; bottom:80px; left:50%; transform:translateX(-50%); background:var(--brown-dark); color:var(--gold); padding:10px 24px; border-radius:50px; font-size:13px; font-weight:800; box-shadow:var(--shadow-md); z-index:999; opacity:0; transition:opacity .3s; pointer-events:none; white-space:nowrap; border:1px solid var(--gold); }
+.toast-notif.show { opacity:1; }
 
-/* ── SKELETON ANIMATION ── */
-@keyframes shimmer {
-    0%   { background-position: -400px 0; }
-    100% { background-position: 400px 0; }
-}
-.skeleton {
-    background: linear-gradient(90deg, #eee 25%, #f5f5f5 50%, #eee 75%);
-    background-size: 400px 100%;
-    animation: shimmer 1.4s infinite;
-    border-radius: 8px;
-}
-
-/* ── FADE IN ── */
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-.kat-card, .all-kat-item {
-    animation: fadeUp .4s ease both;
-}
+@keyframes fadeUp { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
 </style>
 
-<!-- TOP BAR -->
+<!-- FIX: Redirect pakai JS setelah HTML siap, bukan header() -->
+<?php if ($tambahBerhasil): ?>
+<script>
+    // Tampilkan toast dulu baru reload
+    window.addEventListener('load', function() {
+        var t = document.getElementById('toastNotif');
+        if (t) {
+            t.classList.add('show');
+            setTimeout(function(){ window.location.href = '?page=dashboard'; }, 1200);
+        }
+    });
+</script>
+<?php endif; ?>
+
+<!-- TOAST -->
+<div class="toast-notif" id="toastNotif">🛒 Ditambahkan ke keranjang!</div>
+
+<!-- TOPBAR -->
 <div class="pg-topbar">
-    <span class="app-name">Food</span>
-    <button class="search-btn" onclick="document.querySelector('.pg-search input').focus()">
-        <i class="fa fa-search"></i>
-    </button>
-    <a href="?page=transaksi" class="cart-btn">
+    <span class="app-name">🍛 Dapur Nusantara</span>
+    <a href="?page=transaksi" class="topbar-btn">
         <i class="fa fa-shopping-basket"></i>
-        <span class="cart-badge" id="cartCount">0</span>
+        <span class="cart-badge" id="cartCount"><?= $num3 ?? 0 ?></span>
     </a>
 </div>
 
 <!-- HERO -->
 <div class="pg-hero">
-    <span class="meja-badge">
-        <i class="fa fa-cutlery"></i>
-        Meja <?= $auth2['no_meja'] ?? '-' ?>
-    </span>
+    <span class="meja-badge">🪑 Meja <?= $auth2['no_meja'] ?? '-' ?></span>
     <h1>Selamat Datang 👋</h1>
-    <p>Pesan makanan favoritmu sekarang!</p>
+    <p>Cita rasa nusantara, langsung antar ke mejamu</p>
 </div>
 
 <!-- SEARCH -->
 <div class="pg-search">
-    <i class="fa fa-search search-icon"></i>
-    <input type="text" id="searchInput" placeholder="Cari kategori makanan...">
+    <i class="fa fa-search si"></i>
+    <input type="text" id="searchInput" placeholder="Cari menu atau kategori...">
 </div>
 
-<!-- INFO STRIP -->
-<div class="info-strip" style="margin-top:16px;">
-    <div class="info-icon">🍽️</div>
+<!-- GREETING -->
+<div class="greeting-strip">
+    <div class="g-icon">🍽️</div>
     <div>
         <h5>Halo, <?= htmlspecialchars($_SESSION['username'] ?? 'Pelanggan') ?>!</h5>
-        <p>Pilih kategori di bawah untuk mulai memesan</p>
+        <p>Mau makan apa hari ini?</p>
     </div>
 </div>
 
-<!-- KATEGORI HORIZONTAL (Best Seller style) -->
-<div class="pg-section-title">
-    <h2>🔥 Kategori</h2>
+<!-- BEST SELLER -->
+<?php if (count($bestSeller) > 0): ?>
+<div class="sec-title">
+    <h2>Best Seller ⭐</h2>
+    <div class="divider"></div>
 </div>
-
-<div class="kategori-scroll" id="kategoriScroll">
-    <?php foreach ($data as $i => $data2): ?>
-    <a href="?page=order_menu&kategori&menu&kd=<?= $data2['kd_kategori'] ?>"
-       class="kat-card"
-       style="animation-delay: <?= $i * 0.07 ?>s">
-        <img src="img/<?= htmlspecialchars($data2['photo']) ?>"
-             alt="<?= htmlspecialchars($data2['name_kategori']) ?>"
+<div class="bs-scroll">
+    <?php foreach ($bestSeller as $i => $bs): ?>
+    <div class="bs-card" style="animation-delay:<?= $i * 0.07 ?>s">
+        <img src="img/<?= htmlspecialchars($bs['photo']) ?>"
+             alt="<?= htmlspecialchars($bs['name_menu']) ?>"
              onerror="this.src='images/icon/logo-blue.png'">
-        <div class="kat-info">
-            <h6><?= htmlspecialchars($data2['name_kategori']) ?></h6>
-            <p><?= htmlspecialchars($data2['description']) ?></p>
+        <div class="bs-ribbon">★ BEST SELLER</div>
+        <div class="bs-body">
+            <h6><?= htmlspecialchars($bs['name_menu']) ?></h6>
+            <div class="bs-harga">Rp <?= number_format($bs['harga'], 0, ',', '.') ?></div>
         </div>
-        <div class="kat-footer">
-            <span class="btn-lihat">Lihat Menu</span>
+        <div class="bs-footer">
+            <form method="post">
+                <input type="hidden" name="menu_kd" value="<?= $bs['kd_menu'] ?>">
+                <input type="hidden" name="harga"   value="<?= $bs['harga'] ?>">
+                <button type="submit" name="tambah_keranjang" class="bs-btn">
+                    + Keranjang
+                </button>
+            </form>
         </div>
-    </a>
+    </div>
     <?php endforeach; ?>
 </div>
+<div class="ornament">✦ ✦ ✦</div>
+<?php endif; ?>
 
-<!-- SEMUA KATEGORI GRID -->
-<div class="pg-section-title">
-    <h2>🗂️ Semua Kategori</h2>
+<!-- SEMUA KATEGORI -->
+<div class="sec-title">
+    <h2>Semua Kategori</h2>
+    <div class="divider"></div>
 </div>
-
-<div class="all-kat-grid" id="allKatGrid">
-    <?php foreach ($data as $i => $data2): ?>
-    <a href="?page=order_menu&kategori&menu&kd=<?= $data2['kd_kategori'] ?>"
-       class="all-kat-item"
-       data-name="<?= strtolower(htmlspecialchars($data2['name_kategori'])) ?>"
-       style="animation-delay: <?= $i * 0.08 ?>s">
-        <img src="img/<?= htmlspecialchars($data2['photo']) ?>"
-             alt="<?= htmlspecialchars($data2['name_kategori']) ?>"
+<div class="kat-scroll">
+    <?php foreach ($data as $i => $d): ?>
+    <a href="?page=order_menu&kategori&menu&kd=<?= $d['kd_kategori'] ?>"
+       class="kat-chip" style="animation-delay:<?= $i * 0.07 ?>s">
+        <img src="img/<?= htmlspecialchars($d['photo']) ?>"
+             alt="<?= htmlspecialchars($d['name_kategori']) ?>"
              onerror="this.src='images/icon/logo-blue.png'">
-        <div class="kat-body">
-            <h5><?= htmlspecialchars($data2['name_kategori']) ?></h5>
-            <p><?= htmlspecialchars($data2['description']) ?></p>
-        </div>
-        <div class="kat-action">
-            <span class="btn-lihat2">
-                <i class="fa fa-shopping-basket"></i> Tambah ke Keranjang
-            </span>
+        <div class="chip-body">
+            <h6><?= htmlspecialchars($d['name_kategori']) ?></h6>
+            <span class="chip-btn">Lihat Menu →</span>
         </div>
     </a>
     <?php endforeach; ?>
 </div>
 
 <script>
-// Search filter
-document.getElementById('searchInput').addEventListener('input', function() {
-    const q = this.value.toLowerCase();
-    document.querySelectorAll('#allKatGrid .all-kat-item').forEach(function(el) {
-        el.style.display = el.dataset.name.includes(q) ? '' : 'none';
-    });
-});
-
-// Cart badge count (ambil dari session/localStorage jika ada)
-// Ini placeholder — bisa dihubungkan ke data order sungguhan
-const cartCount = <?= $num3 ?? 0 ?>;
-document.getElementById('cartCount').textContent = cartCount > 0 ? cartCount : '0';
+function showToast() {
+    var t = document.getElementById('toastNotif');
+    t.classList.add('show');
+    setTimeout(function(){ t.classList.remove('show'); }, 2000);
+}
 </script>
