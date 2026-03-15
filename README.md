@@ -15,7 +15,7 @@
 | 2311102316    | Boutefhika Nuha Zidayatul K.|                           |
 
 ## 📚 Deskripsi Singkat
-Project ini merupakan tugas besar dari mata kuliah IPPL yang bertujuan untuk mengimplementasikan perangcangan perangkat lunak yang sudah dibuat.
+Project ini merupakan tugas besar dari mata kuliah IPPL yang bertujuan untuk mengimplementasikan perancangan perangkat lunak yang sudah dibuat.
 
 ## 🚀 Fitur Utama
 
@@ -30,14 +30,13 @@ Project ini merupakan tugas besar dari mata kuliah IPPL yang bertujuan untuk men
 2. Clone project dari GitHub di terminal
   **Clone repositori ini**
    ```bash
-   
+   https://github.com/nhaazk95/Project-IPPL.git
 3. Kalo ada temen yang habis update code jangan lupa di pull dulu (pokoknya sebelum ngoding **git pull** dlu di Terminal VsCode)
 4. Kalo kamu yang habis ngoding jangan lupa di update, buka Termainal VsCode lalu:
-   ```
+   ```bash
    git add .
    git commit -m "update fitur login"
    git push
-   ```
 6. Selesai.
 
 # SELAMAT NGODINGGGG👩🏻‍💻
