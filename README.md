@@ -30,14 +30,16 @@ Project ini merupakan tugas besar dari mata kuliah IPPL yang bertujuan untuk men
 2. Download codingannya (klik **<> Code** lalu pilih **Download Zip**)
 3. Clone project dari GitHub di Terminal VsCode arahin ke dalam folder project yg udh di download
   **Clone repositori ini**
-   ```bash
+   ```
    https://github.com/nhaazk95/Project-IPPL.git
-4. Kalo ada temen yang habis update code jangan lupa di pull dulu (pokoknya sebelum ngoding **git pull** dlu di Terminal VsCode)
-5. Kalo kamu yang habis ngoding jangan lupa di update, buka Termainal VsCode lalu:
-   ```bash
+   ```
+5. Kalo ada temen yang habis update code jangan lupa di pull dulu (pokoknya sebelum ngoding **git pull** dlu di Terminal VsCode)
+6. Kalo kamu yang habis ngoding jangan lupa di update, buka Termainal VsCode lalu:
+   ```
    git add .
    git commit -m "update fitur login"
    git push
-6. Selesai.
+   ```
+7. Selesai.
 
 # SELAMAT NGODINGGGG👩🏻‍💻
