@@ -38,6 +38,7 @@ Project ini merupakan tugas besar dari mata kuliah IPPL yang bertujuan untuk men
    ```
    git add .
    git commit -m "update fitur login"
+   git push -u origin master
    git push
    ```
 7. Selesai.
