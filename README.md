@@ -1,5 +1,5 @@
 # TUGAS BESAR IMPLEMENTASI PERANCANNGAN PERANGKAT LUNAK
-## PASTIKAN SELALU PULL SEBELUM MENGODING 🙇🏿‍♂️
+## PASTIKAN SELALU PULL SEBELUM MENGODING 👩🏻‍💻
 
 ## 📌 **Sistem Pemesanan Menu di Restaurant**  
 
