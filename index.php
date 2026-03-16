@@ -204,13 +204,14 @@
             color: #3E1F00; margin-top: 6px;
             display: block;
         }
+
     </style>
 </head>
 <body>
     <div class="login-card">
         <!-- Logo -->
         <div class="login-logo">
-            <img src="images/icon/logo.png" alt="Logo"
+            <img src="images/icon/logo.png" alt="logo"
                  onerror="this.style.display='none'">
             <span class="logo-text">Dapur Nusantara</span>
         </div>
