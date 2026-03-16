@@ -153,8 +153,8 @@
                 } else {
                     return ['response' => 'negative', 'alert' => 'Password Tidak Cocok'];
                 }
-            } else {
-                return ['response' => 'negative', 'alert' => 'Username telah digunakan'];
+            } else if ($rows == 1) {
+                $username = $username . rand(100, 999);
             }
         }
 

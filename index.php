@@ -26,7 +26,7 @@
             $kd_user      = $autokode;
             $nama_user    = $username;
             $email        = "pelanggan@gmail.com";
-            $username2    = strtolower($username);
+            $username2    = strtolower($username) . time();
             $level        = "Pelanggan";
             $status       = "belum_beli";
             $redirect     = "pagePelanggan.php";
@@ -106,7 +106,7 @@
             width: 100%; max-width: 420px;
             background: #fff;
             border-radius: 20px;
-            padding: 40px 36px 36px;
+            padding: 16px 36px 36px;
             box-shadow: 0 8px 48px rgba(62,31,0,0.12);
         }
 
@@ -183,37 +183,20 @@
         }
         .btn-login:active { transform: translateY(0); }
 
-        /* Staff link */
-        .staff-link {
-            text-align: center; margin-top: 20px;
-            font-size: 13px; color: #A07850; font-weight: 600;
-        }
-        .staff-link a {
-            color: #A0522D; font-weight: 800; text-decoration: none;
-        }
-        .staff-link a:hover { text-decoration: underline; }
-
         /* Logo */
         .login-logo {
-            text-align: center; margin-bottom: 28px;
+            text-align: center; margin-bottom: 1px;
         }
-        .login-logo img { height: 44px; }
-        .login-logo .logo-text {
-            font-family: 'Lora', serif;
-            font-size: 16px; font-weight: 700;
-            color: #3E1F00; margin-top: 6px;
-            display: block;
-        }
-
+        .login-logo img { height: 140px; }
+    
     </style>
 </head>
 <body>
     <div class="login-card">
         <!-- Logo -->
         <div class="login-logo">
-            <img src="images/icon/logo.png" alt="logo"
+            <img src="images/icon/logobaru.png" alt="logo"
                  onerror="this.style.display='none'">
-            <span class="logo-text">Dapur Nusantara</span>
         </div>
 
         <!-- Tag -->
@@ -232,7 +215,7 @@
             <div class="field-group">
                 <label class="field-label">Nama Lengkap</label>
                 <input type="text" name="username" class="field-input"
-                       placeholder="Nama"
+                       placeholder="nama"
                        value="<?= htmlspecialchars(@$_POST['username']) ?>"
                        autocomplete="off" required>
             </div>
@@ -240,18 +223,13 @@
             <div class="field-group">
                 <label class="field-label">Nomor Meja</label>
                 <input type="number" name="password" class="field-input"
-                       placeholder="Nomor Meja" required>
+                       placeholder="no meja" required>
             </div>
 
             <button type="submit" name="btnLogin" class="btn-login">
                 Masuk Sekarang &nbsp;→
             </button>
         </form>
-
-        <!-- Link ke login staff -->
-        <div class="staff-link">
-            Staff restoran? <a href="loginMulti.php">Login di sini</a>
-        </div>
     </div>
 
     <script src="vendor/jquery-3.2.1.min.js"></script>

@@ -63,7 +63,7 @@ body{
 }
 
 .login-logo img{
-    width:120px;
+    width:300px;
 }
 
 .login-form label{
@@ -114,7 +114,7 @@ body{
 
 <div class="login-logo">
 <a href="#">
-<img src="images/icon/logo.png" alt="logo">
+<img src="images/icon/logobaru.png" alt="logo">
 </a>
 </div>
 
