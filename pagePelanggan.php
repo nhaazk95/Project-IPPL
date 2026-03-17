@@ -9,23 +9,20 @@
         $username = $_SESSION['username'] ?? null;
 
         if ($username) {
-            // 1. Hapus dari tb_pelanggan (pakai name_pelanggan)
+            // 1. Hapus dari tb_pelanggan
             $sqlDelPelanggan = "DELETE FROM tb_pelanggan WHERE name_pelanggan = '$username'";
             mysqli_query($con, $sqlDelPelanggan);
 
-            // 2. Cari kd_user — coba username lowercase ATAU name
-            $usernameLC = strtolower($username);
-            $sqlUser    = "SELECT kd_user FROM tb_user
-                           WHERE username = '$usernameLC'
-                              OR username = '$username'
-                              OR name = '$username'
-                           LIMIT 1";
+            // 2. Cari kd_user berdasarkan name
+            $sqlUser = "SELECT kd_user FROM tb_user
+                        WHERE name = '$username' AND level = 'Pelanggan'
+                        LIMIT 1";
             $exeUser = mysqli_query($con, $sqlUser);
             $dtoUser = mysqli_fetch_assoc($exeUser);
             $kd_user = $dtoUser['kd_user'] ?? null;
 
             if ($kd_user) {
-                // 3. Reset status meja jadi non-active
+                // 3. Reset status meja
                 $sqlMeja = "UPDATE tb_meja SET status='non-active', user_kd='' WHERE user_kd='$kd_user'";
                 mysqli_query($con, $sqlMeja);
 
@@ -40,8 +37,14 @@
         exit();
     }
 
-    $auth          = $id->AuthUser($_SESSION['username']);
-    $auth2         = $id->AuthPelanggan($_SESSION['username']);
+    // FIX: AuthUser pakai name bukan username karena username di db pakai timestamp
+    global $con;
+    $sessionUser = $_SESSION['username'] ?? '';
+    $sqlAuth     = "SELECT * FROM tb_user WHERE name = '$sessionUser' AND level = 'Pelanggan' LIMIT 1";
+    $exeAuth     = mysqli_query($con, $sqlAuth);
+    $auth        = mysqli_fetch_assoc($exeAuth);
+
+    $auth2         = $id->AuthPelanggan($sessionUser);
     $sessionStatus = $id->sessionCheck();
 
     if ($sessionStatus == "false") { header("Location:index.php"); exit(); }
@@ -129,7 +132,6 @@
         .nav-item svg path { fill: rgba(255,255,255,0.4); transition: fill .2s; }
         .nav-item.active svg path { fill: var(--gold); }
         .nav-item:hover svg path { fill: var(--gold); }
-
         .cart-wrap { position: relative; display: inline-block; }
         .badge-cart {
             position: absolute; top: -4px; right: -8px;
@@ -158,24 +160,19 @@
         ?>
         <div class="pg-copyright">Copyright © 2026 Dapur Nusantara. All rights reserved.</div>
     </div>
-
-    <!-- ── BOTTOM NAVIGATION ── -->
+    
+<!-- ── BOTTOM NAVIGATION ── -->
     <nav class="bottom-nav">
-        <!-- Beranda -->
         <a href="?page=dashboard" class="nav-item <?= ($page=='dashboard') ? 'active' : '' ?>">
             <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
             Beranda
         </a>
-
-        <!-- Menu -->
         <a href="?page=order_menu&kd=1" class="nav-item <?= in_array($page,['order_menu','detail_menu']) ? 'active' : '' ?>">
             <svg viewBox="0 0 24 24">
                 <path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/>
             </svg>
             Menu
         </a>
-
-        <!-- Keranjang -->
         <a href="?page=transaksi" class="nav-item <?= in_array($page,['transaksi','checkout']) ? 'active' : '' ?>">
             <span class="cart-wrap">
                 <svg viewBox="0 0 24 24">
@@ -187,8 +184,6 @@
             </span>
             Keranjang
         </a>
-
-        <!-- Keluar -->
         <a href="#" class="nav-item" id="btnLogout">
             <svg viewBox="0 0 24 24">
                 <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
@@ -230,7 +225,6 @@ $('#btnLogout').click(function(e){
         }
     });
 });
-
 $(document).ready(function(){
     if($('#example').length) $('#example').DataTable();
 });
