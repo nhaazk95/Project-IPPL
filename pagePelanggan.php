@@ -26,8 +26,9 @@
                 $sqlMeja = "UPDATE tb_meja SET status='non-active', user_kd='' WHERE user_kd='$kd_user'";
                 mysqli_query($con, $sqlMeja);
 
-                // 4. Hapus dari tb_user
-                $sqlDelUser = "DELETE FROM tb_user WHERE kd_user='$kd_user'";
+                // 4. SOFT DELETE - nonaktifkan user, tidak dihapus
+                //    supaya data di tb_order tidak error foreign key
+                $sqlDelUser = "UPDATE tb_user SET status = 0 WHERE kd_user = '$kd_user'";
                 mysqli_query($con, $sqlDelUser);
             }
         }
@@ -40,7 +41,9 @@
     // FIX: AuthUser pakai name bukan username karena username di db pakai timestamp
     global $con;
     $sessionUser = $_SESSION['username'] ?? '';
-    $sqlAuth     = "SELECT * FROM tb_user WHERE name = '$sessionUser' AND level = 'Pelanggan' LIMIT 1";
+
+    // Tambah AND status = 1 supaya user nonaktif tidak bisa masuk
+    $sqlAuth     = "SELECT * FROM tb_user WHERE name = '$sessionUser' AND level = 'Pelanggan' AND status = 1 LIMIT 1";
     $exeAuth     = mysqli_query($con, $sqlAuth);
     $auth        = mysqli_fetch_assoc($exeAuth);
 
@@ -158,9 +161,9 @@
                 break;
         }
         ?>
-        <div class="pg-copyright">Copyright © 2026 Dapur Nusantara. All rights reserved.</div>
+        <div class="pg-copyright">Copyright &copy; 2026 Dapur Nusantara. All rights reserved.</div>
     </div>
-    
+
 <!-- ── BOTTOM NAVIGATION ── -->
     <nav class="bottom-nav">
         <a href="?page=dashboard" class="nav-item <?= ($page=='dashboard') ? 'active' : '' ?>">

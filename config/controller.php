@@ -143,7 +143,8 @@
 
                 if ($password == $confirm) {
                     $password = base64_encode($password);
-                    $sql      = "INSERT INTO tb_user VALUES('$kd_user','$name','$email','$username','$password','$level')";
+                    // status = 1 (aktif) untuk user baru
+                    $sql      = "INSERT INTO tb_user VALUES('$kd_user','$name','$email','$username','$password','$level', 1)";
                     $query    = mysqli_query($con, $sql);
                     if ($query) {
                         return ['response' => 'positive', 'alert' => 'Registrasi Berhasil', 'redirect' => $redirect];
@@ -172,7 +173,8 @@
                 $password = htmlspecialchars($password);
                 $password = base64_encode($password);
 
-                $sql   = "INSERT INTO tb_user VALUES('$kd_user','$name','$email','$username','$password','$level')";
+                // FIX: tambah status = 1 (aktif) untuk pelanggan baru
+                $sql   = "INSERT INTO tb_user VALUES('$kd_user','$name','$email','$username','$password','$level', 1)";
                 $query = mysqli_query($con, $sql);
                 if ($query) {
                     return ['response' => 'positive', 'alert' => 'Registrasi Berhasil', 'redirect' => $redirect];
@@ -224,7 +226,8 @@
         public function AuthUser($sessionUser)
         {
             global $con;
-            $sql     = "SELECT * FROM tb_user WHERE username = '$sessionUser'";
+            // FIX: tambah filter status = 1 supaya user nonaktif tidak bisa login
+            $sql     = "SELECT * FROM tb_user WHERE username = '$sessionUser' AND status = 1";
             $query   = mysqli_query($con, $sql);
             $bigData = mysqli_fetch_assoc($query);
             return $bigData;

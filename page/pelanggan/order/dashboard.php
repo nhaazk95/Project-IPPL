@@ -140,7 +140,7 @@ body { font-family:'Nunito',sans-serif; background:var(--cream); color:var(--tex
             <div class="bs-harga">Rp <?= number_format($bs['harga'], 0, ',', '.') ?></div>
         </div>
         <div class="bs-footer">
-            <span class="bs-btn">Pesan →</span>
+            <span class="bs-btn">Order →</span>
         </div>
     </a>
     <?php endforeach; ?>

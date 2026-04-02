@@ -7,10 +7,17 @@
     $autokodedetail     = $dm->autokode("tb_detail_order", "kd_detail", "DM");
     $autokodedetailTemp = $dm->autokode("tb_detail_order_temporary", "kd_detail", "DM");
     $authPelanggan      = $dm->AuthPelanggan($_SESSION['username']);
-    $authUser           = $dm->AuthUser($_SESSION['username']);
-    $no_meja2           = $authPelanggan['no_meja'];
 
-    // FIX: Ambil parameter 'from' untuk menentukan tujuan tombol back
+    // FIX: AuthUser pakai name bukan username (karena session simpan name)
+    global $con;
+    $sessionUser = $_SESSION['username'] ?? '';
+    $sqlAuthUser = "SELECT * FROM tb_user WHERE name = '$sessionUser' AND level = 'Pelanggan' AND status = 1 LIMIT 1";
+    $exeAuthUser = mysqli_query($con, $sqlAuthUser);
+    $authUser    = mysqli_fetch_assoc($exeAuthUser);
+
+    $no_meja2 = $authPelanggan['no_meja'] ?? null;
+
+    // Ambil parameter 'from' untuk menentukan tujuan tombol back
     $from = $_GET['from'] ?? 'order_menu';
 
     // Tentukan URL back berdasarkan asal halaman
@@ -37,14 +44,16 @@
     $jumlahKeranjang = count($data);
 
     if (isset($_POST['btnTambah'])) {
-        $kd_user       = $authUser['kd_user'];
+        $kd_user       = $authUser['kd_user'] ?? null;
         $status_detail = "pending";
         $total         = (int)$_POST['total'];
         $menu_kd       = $getMenu['kd_menu'];
         $sub_total     = (int)$_POST['sub_total'];
         $keterangan    = trim($_POST['keterangan'] ?? '');
 
-        if ($total <= 0 || $sub_total <= 0) {
+        if (!$kd_user) {
+            $response = ['response' => 'negative', 'alert' => 'Sesi user tidak ditemukan, silakan login ulang'];
+        } elseif ($total <= 0 || $sub_total <= 0) {
             $response = ['response' => 'negative', 'alert' => 'Isi jumlah dengan benar'];
         } elseif (!$data_kd) {
             $response = ['response' => 'negative', 'alert' => 'Sesi order tidak ditemukan, silakan login ulang'];
@@ -55,22 +64,34 @@
             $dta = mysqli_fetch_assoc($exe);
 
             if ($num > 0) {
+                // Update jumlah jika menu sudah ada di keranjang
                 $total     = $dta['total'] + $total;
                 $sub_total = $dta['sub_total'] + $sub_total;
                 $value     = "total='$total', sub_total='$sub_total'";
                 $response  = $dm->update("tb_detail_order_temporary", $value, "menu_kd = '$menu_kd' AND order_kd", $data_kd, "?page=detail_menu&kategori=$kate&kd=$kd&from=$from");
-                $dm->update("tb_detail_order", $value, "menu_kd= '$menu_kd' AND order_kd", $data_kd, "?page=detail_menu&kategori=$kate&kd=$kd&from=$from");
+
+                // Update tb_detail_order hanya jika baris sudah ada
+                $sqlCekDO = "SELECT kd_detail FROM tb_detail_order WHERE menu_kd='$menu_kd' AND order_kd='$data_kd'";
+                $exeCekDO = mysqli_query($con, $sqlCekDO);
+                if (mysqli_num_rows($exeCekDO) > 0) {
+                    $dm->update("tb_detail_order", $value, "menu_kd= '$menu_kd' AND order_kd", $data_kd, "?page=detail_menu&kategori=$kate&kd=$kd&from=$from");
+                }
             } else {
+                // Insert ke tb_detail_order_temporary
                 $valueDetailTemp = "'$autokodedetailTemp', '$data_kd', '$kd_user', '$menu_kd', '', '$total', '$sub_total', '', '', '', '$status_detail'";
                 $response        = $dm->insert("tb_detail_order_temporary", $valueDetailTemp, "?page=detail_menu&kategori=$kate&kd=$kd&from=$from");
-                $valueDetail     = "'$autokodedetail', '$data_kd', '$kd_user', '$menu_kd', '', '$total', '$sub_total', '', '', '', '$status_detail'";
+
+                // FIX: Insert ke tb_detail_order dengan transaksi_kd = NULL
+                // Kolom transaksi_kd sudah diubah jadi nullable di database
+                $valueDetail = "'$autokodedetail', '$data_kd', '$kd_user', '$menu_kd', NULL, '$total', '$sub_total', '', '', '', '$status_detail'";
                 $dm->insert("tb_detail_order", $valueDetail, "?page=detail_menu&kategori=$kate&kd=$kd&from=$from");
+
                 $dm->update("tb_order", "status_order='belum_bayar'", "kd_order", $data_kd, "?page=detail_menu&kategori=$kate&kd=$kd&from=$from");
             }
 
             if (!empty($keterangan)) {
                 $keterangan = mysqli_real_escape_string($con, $keterangan);
-                $valCat = "keterangan='$keterangan', status_keterangan='N'";
+                $valCat     = "keterangan='$keterangan', status_keterangan='N'";
                 $dm->update("tb_detail_order_temporary", $valCat, "order_kd", $data_kd, "");
                 $dm->update("tb_detail_order", $valCat, "order_kd", $data_kd, "");
             }
@@ -189,7 +210,6 @@
 <!-- Page Content -->
 <div class="dm-wrap">
     <div class="dm-header">
-        <!-- FIX: tombol back sesuai asal halaman -->
         <a href="<?= $backUrl ?>" class="back-btn">
             <i class="fa fa-arrow-left"></i>
         </a>

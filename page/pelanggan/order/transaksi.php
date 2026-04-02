@@ -7,7 +7,7 @@
     $data_kd       = null;
     $pesanan       = [];
     $total_bayar   = 0;
-    $hapusBerhasil = false; // FIX: flag untuk redirect via JS
+    $hapusBerhasil = false;
 
     if ($no_meja) {
         $sql = "SELECT kd_order FROM tb_order WHERE no_meja='$no_meja'";
@@ -16,7 +16,6 @@
         $data_kd = $dta['kd_order'] ?? null;
     }
 
-    // FIX: Handle hapus SEBELUM query pesanan, gunakan flag bukan header()
     if (isset($_GET['hapus']) && isset($_GET['kd']) && $data_kd) {
         $tr->delete("tb_detail_order_temporary", "kd_detail", $_GET['kd'], "");
         $cekE = mysqli_query($con, "SELECT COUNT(*) as jml FROM tb_detail_order_temporary WHERE order_kd='$data_kd'");
@@ -24,7 +23,7 @@
         if ($cekD['jml'] == 0) {
             $tr->update("tb_order", "status_order='belum_beli'", "kd_order", $data_kd, "");
         }
-        $hapusBerhasil = true; // ← set flag, redirect via JS di bawah
+        $hapusBerhasil = true;
     }
 
     if ($data_kd) {
@@ -61,12 +60,6 @@
 .tr-header a { width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.12); display:flex; align-items:center; justify-content:center; color:var(--gold); text-decoration:none; font-size:15px; transition:background .2s; }
 .tr-header a:hover { background:rgba(200,151,58,0.25); }
 .tr-header h2 { font-family:'Lora',serif; font-size:19px; font-weight:700; color:var(--gold); flex:1; }
-.tr-status { margin:14px; border-radius:var(--radius); padding:13px 16px; display:flex; align-items:center; gap:12px; font-size:13px; font-weight:700; border:1.5px solid transparent; }
-.tr-status.pending { background:#fff8e6; color:#b07d00; border-color:#f0d080; }
-.tr-status.dimasak { background:#fff0e6; color:#c44b00; border-color:#f0b080; }
-.tr-status.siap    { background:#e8f8ec; color:#1a7a35; border-color:#80c090; }
-.tr-status.diambil { background:#e8f0ff; color:#1a3fa0; border-color:#80a0e0; }
-.tr-status .st-icon { font-size:22px; }
 .tr-sec-title { padding:14px 14px 8px; font-family:'Lora',serif; font-size:16px; font-weight:700; color:var(--brown-dark); }
 .tr-item { margin:0 14px 12px; background:#fff; border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; display:flex; border:1.5px solid var(--cream-dark); animation:fadeUp .35s ease both; }
 .tr-item img { width:85px; height:85px; object-fit:cover; flex-shrink:0; }
@@ -98,7 +91,6 @@
 @keyframes fadeUp { from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);} }
 </style>
 
-<!-- FIX: Redirect via JS setelah hapus, bukan header() -->
 <?php if ($hapusBerhasil): ?>
 <script>window.location.href = '?page=transaksi';</script>
 <?php endif; ?>
@@ -110,23 +102,6 @@
     </div>
 
     <?php if (count($pesanan) > 0): ?>
-        <?php
-        $allStatus = array_column($pesanan, 'status_detail');
-        $ds = 'pending';
-        if (in_array('dimasak', $allStatus)) $ds = 'dimasak';
-        if (in_array('siap',    $allStatus)) $ds = 'siap';
-        if (in_array('diambil', $allStatus)) $ds = 'diambil';
-        $si = [
-            'pending' => ['⏳', 'Menunggu konfirmasi dapur'],
-            'dimasak' => ['🔥', 'Sedang dimasak'],
-            'siap'    => ['✅', 'Siap diambil!'],
-            'diambil' => ['📦', 'Sudah diambil'],
-        ];
-        ?>
-        <div class="tr-status <?= $ds ?>">
-            <span class="st-icon"><?= $si[$ds][0] ?></span>
-            <span><?= $si[$ds][1] ?></span>
-        </div>
 
         <div class="tr-sec-title">Pesananmu (<?= count($pesanan) ?> item)</div>
 
