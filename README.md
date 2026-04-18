@@ -58,9 +58,11 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
-# 🍽️ Sistem Pemesanan Menu di Restaurant ## Tugas Besar Implementasi Perancangan Perangkat Lunak 
+# 🍽️ Sistem Pemesanan Menu D'Nusa
 
-## 📌 Deskripsi Project ini merupakan aplikasi berbasis Laravel untuk sistem pemesanan menu restoran, sebagai implementasi dari perancangan perangkat lunak pada mata kuliah IPPL.  
+## Tugas Besar Implementasi Perancangan Perangkat Lunak 
+
+### 📌 Deskripsi Project ini merupakan aplikasi berbasis Laravel untuk sistem pemesanan menu restoran D'Nusa, sebagai implementasi dari perancangan perangkat lunak pada mata kuliah IPPL.  
 
 ## 👨‍💻 Anggota Kelompok 
 | NIM           | Nama Lengkap                |  
