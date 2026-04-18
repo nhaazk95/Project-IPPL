@@ -14,39 +14,37 @@ class LaporanController extends Controller
 {
     public function orderan(Request $request)
     {
-        $dari   = $request->filled('dari')   ? $request->dari   : now()->startOfMonth()->toDateString();
-        $sampai = $request->filled('sampai') ? $request->sampai : now()->toDateString();
+        $rows = [];
 
-        $transaksis = Transaksi::with(['order.meja', 'kasir'])
-            ->whereDate('tanggal', '>=', $dari)
-            ->whereDate('tanggal', '<=', $sampai)
-            ->orderByDesc('tanggal')
-            ->get();
+        if ($request->filled('dari') && $request->filled('sampai')) {
+            $dari   = $request->dari;
+            $sampai = $request->sampai;
 
-        $totalPendapatan  = $transaksis->sum('total_harga');
-        $totalTransaksi   = $transaksis->count();
-        $rataRata         = $totalTransaksi > 0 ? $totalPendapatan / $totalTransaksi : 0;
+            // Ambil semua detail order dalam periode
+            $details = \App\Models\DetailOrder::with(['order.meja', 'menu'])
+                ->whereHas('order', function ($q) use ($dari, $sampai) {
+                    $q->whereDate('tanggal', '>=', $dari)
+                      ->whereDate('tanggal', '<=', $sampai);
+                })
+                ->get();
 
-        $topMenus = Menu::withCount(['detailOrders as total_terjual' => function ($q) use ($dari, $sampai) {
-            $q->whereHas('order', function ($o) use ($dari, $sampai) {
-                $o->whereDate('tanggal', '>=', $dari)->whereDate('tanggal', '<=', $sampai);
-            });
-        }])
-            ->orderByDesc('total_terjual')
-            ->limit(10)
-            ->get();
+            foreach ($details as $d) {
+                $rows[] = [
+                    'kode_order' => $d->order->kd_order    ?? '-',
+                    'pelanggan'  => $d->order->nama_user   ?? 'Tamu',
+                    'no_meja'    => $d->order->no_meja     ?? '-',
+                    'nama_menu'  => $d->menu->name_menu    ?? '-',
+                    'jumlah'     => $d->total,
+                    'sub_total'  => $d->sub_total,
+                    'harga'      => $d->menu->harga        ?? 0,
+                    'tanggal'    => $d->order->tanggal
+                        ? \Carbon\Carbon::parse($d->order->tanggal)->format('Y-m-d')
+                        : '-',
+                ];
+            }
+        }
 
-        $perHari = Transaksi::selectRaw('DATE(tanggal) as tgl, SUM(total_harga) as total')
-            ->whereDate('tanggal', '>=', $dari)
-            ->whereDate('tanggal', '<=', $sampai)
-            ->groupBy('tgl')
-            ->orderBy('tgl')
-            ->get();
-
-        return view('admin.laporan.orderan', compact(
-            'transaksis', 'totalPendapatan', 'totalTransaksi', 'rataRata',
-            'topMenus', 'dari', 'sampai', 'perHari'
-        ));
+        return view('admin.laporan.orderan', compact('rows'));
     }
 
     public function exportOrderan(Request $request)

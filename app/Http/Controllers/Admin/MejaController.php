@@ -10,8 +10,15 @@ class MejaController extends Controller
 {
     public function index()
     {
-        $mejas = Meja::orderBy('no_meja')->paginate(20);
-        return view('admin.meja.index', compact('mejas'));
+        $mejas = Meja::orderBy('no_meja')->paginate(50);
+
+        $all = Meja::all();
+        $mejaStats = [
+            'tersedia' => $all->where('status', 'tersedia')->count(),
+            'terisi'   => $all->where('status', 'terisi')->count(),
+        ];
+
+        return view('admin.meja.index', compact('mejas', 'mejaStats'));
     }
 
     public function store(Request $request)
@@ -20,24 +27,17 @@ class MejaController extends Controller
             'no_meja' => 'required|integer|min:1|unique:mejas,no_meja',
             'status'  => 'required|in:tersedia,terisi',
         ]);
-
-        Meja::create([
-            'no_meja' => $request->no_meja,
-            'status'  => $request->status,
-        ]);
-
+        Meja::create(['no_meja' => $request->no_meja, 'status' => $request->status]);
         return back()->with('success', 'Meja berhasil ditambahkan.');
     }
 
     public function update(Request $request, string $id)
     {
         $meja = Meja::findOrFail($id);
-
         $request->validate([
             'no_meja' => 'required|integer|min:1|unique:mejas,no_meja,' . $id,
             'status'  => 'required|in:tersedia,terisi',
         ]);
-
         $meja->update($request->only(['no_meja', 'status']));
         return back()->with('success', 'Meja berhasil diperbarui.');
     }
@@ -50,13 +50,5 @@ class MejaController extends Controller
         }
         $meja->delete();
         return back()->with('success', 'Meja berhasil dihapus.');
-    }
-
-    public function toggleStatus(string $id)
-    {
-        $meja = Meja::findOrFail($id);
-        $meja->status = $meja->status === 'tersedia' ? 'terisi' : 'tersedia';
-        $meja->save();
-        return back()->with('success', 'Status meja diperbarui.');
     }
 }

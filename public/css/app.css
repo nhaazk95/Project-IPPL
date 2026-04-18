@@ -707,6 +707,52 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 /* ===== PAGINATION ===== */
 .pagination { display: flex; justify-content: flex-end; }
 
+/* ===== PAGINATION BESAR ===== */
+.pagination-wrap {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+.pagination-wrap .pagination {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+/* Override Laravel simple pagination */
+.pagination-wrap nav span,
+.pagination-wrap nav a {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 10px !important;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .18s;
+    border: 1.5px solid var(--cream-dark) !important;
+    background: #fff !important;
+    color: var(--text-mid) !important;
+}
+.pagination-wrap nav a:hover {
+    background: var(--brown) !important;
+    color: var(--gold) !important;
+    border-color: var(--brown) !important;
+}
+.pagination-wrap nav span[aria-disabled="true"] {
+    opacity: .4;
+    cursor: not-allowed;
+}
+/* Active page */
+.pagination-wrap nav span.font-bold,
+.pagination-wrap nav span[aria-current="page"] {
+    background: var(--brown) !important;
+    color: var(--gold) !important;
+    border-color: var(--brown) !important;
+}
+
 /* ===== AUTH LAYOUT — centered card on brown bg ===== */
 .auth-bg {
     min-height: 100vh;

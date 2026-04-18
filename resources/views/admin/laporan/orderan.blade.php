@@ -1,186 +1,229 @@
 @extends('layouts.app')
-@section('title', 'Laporan Orderan — Dapur Nusantara')
+@section('title', 'Laporan Orderan per Periode — Admin')
 @section('page-title', 'Laporan Orderan per Periode')
+
+@section('breadcrumb')
+    <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+    <span class="sep">/</span>
+    <a href="{{ route('admin.laporan.transaksi') }}">Laporan</a>
+    <span class="sep">/</span>
+    <span class="current">Orderan per Periode</span>
+@endsection
 
 @section('content')
 
-<div class="page-header mb-20">
-    <div>
-        <p class="ph-title"><i class="fa-solid fa-clipboard-list" style="margin-right:8px;color:var(--gold);"></i>Laporan Orderan per Periode</p>
-        <p class="ph-sub">Filter berdasarkan rentang tanggal</p>
-    </div>
-    <div style="display:flex;gap:9px;flex-wrap:wrap;">
-        <a href="{{ route('admin.laporan.export', request()->all()) }}" class="btn-secondary">
-            <i class="fa-solid fa-file-csv"></i> Export CSV
-        </a>
-        <button class="btn-primary" onclick="window.print()">
-            <i class="fa-solid fa-print"></i> Cetak
-        </button>
-    </div>
-</div>
-
-{{-- Filter --}}
-<div class="card mb-20">
+{{-- Periode Filter Card --}}
+<div class="card mb-24">
     <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-filter" style="margin-right:7px;"></i>Filter Periode</span>
+        <span class="card-title" style="font-size:15px;">Periode</span>
     </div>
-    <div class="card-body">
-        <form method="GET" action="{{ route('admin.laporan.orderan') }}"
-              style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;">
-            <div class="form-group" style="margin:0;flex:1;min-width:155px;">
-                <label class="form-label">Dari Tanggal</label>
-                <input type="date" name="dari" class="form-control"
-                    value="{{ $dari ?? now()->startOfMonth()->format('Y-m-d') }}">
+    <div class="card-body" style="padding:24px 26px;">
+        <form method="GET" action="{{ route('admin.laporan.orderan') }}" id="filterForm">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px;max-width:680px;">
+                <div>
+                    <label class="form-label" style="font-size:13px;color:var(--text-dark);margin-bottom:8px;">Dari Tanggal</label>
+                    <input type="date" name="dari" class="form-control periode-input"
+                        value="{{ request('dari') }}" placeholder="dd/mm/yy">
+                </div>
+                <div>
+                    <label class="form-label" style="font-size:13px;color:var(--text-dark);margin-bottom:8px;">Ke Tanggal</label>
+                    <input type="date" name="sampai" class="form-control periode-input"
+                        value="{{ request('sampai') }}" placeholder="dd/mm/yy">
+                </div>
             </div>
-            <div class="form-group" style="margin:0;flex:1;min-width:155px;">
-                <label class="form-label">Sampai Tanggal</label>
-                <input type="date" name="sampai" class="form-control"
-                    value="{{ $sampai ?? now()->format('Y-m-d') }}">
+            <div style="display:flex;gap:10px;">
+                <button type="submit" class="btn-periode-search">
+                    <i class="fa-solid fa-magnifying-glass"></i> Search
+                </button>
+                <button type="button" class="btn-periode-reload" onclick="reloadPage()">
+                    Reload
+                </button>
             </div>
-            <button type="submit" class="btn-primary">
-                <i class="fa-solid fa-magnifying-glass"></i> Tampilkan
-            </button>
         </form>
     </div>
 </div>
 
-{{-- Summary --}}
-<div class="grid-3 mb-20">
-    <div class="stat-card">
-        <div class="stat-icon gold"><i class="fa-solid fa-receipt"></i></div>
-        <div>
-            <div class="stat-value">{{ $totalTransaksi ?? 0 }}</div>
-            <div class="stat-label">Total Transaksi</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon green"><i class="fa-solid fa-money-bill-wave"></i></div>
-        <div>
-            <div class="stat-value" style="font-size:17px;">Rp {{ number_format($totalPendapatan ?? 0, 0, ',', '.') }}</div>
-            <div class="stat-label">Total Pendapatan</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon blue"><i class="fa-solid fa-chart-bar"></i></div>
-        <div>
-            <div class="stat-value" style="font-size:17px;">Rp {{ number_format($rataRata ?? 0, 0, ',', '.') }}</div>
-            <div class="stat-label">Rata-rata / Transaksi</div>
-        </div>
-    </div>
-</div>
-
-{{-- Grafik per hari --}}
-@if(($perHari ?? collect())->count() > 1)
-<div class="card mb-20">
-    <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-chart-area" style="margin-right:7px;"></i>Grafik Pendapatan Harian</span>
-    </div>
-    <div class="card-body">
-        <canvas id="hariChart" height="160"></canvas>
-    </div>
-</div>
-@endif
-
-{{-- Top Menu --}}
-@if(($topMenus ?? collect())->count())
-<div class="card mb-20">
-    <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-fire" style="margin-right:7px;"></i>Menu Terlaris Periode Ini</span>
-    </div>
-    <div class="card-body" style="padding:0;">
-        @foreach($topMenus as $i => $menu)
-        <div style="display:flex;align-items:center;gap:12px;padding:11px 18px;border-bottom:1px solid var(--cream-dark);">
-            <div style="width:26px;height:26px;border-radius:50%;
-                background:{{ $i === 0 ? 'var(--gold)' : ($i === 1 ? 'var(--cream-mid)' : 'var(--cream-dark)') }};
-                color:{{ $i === 0 ? 'var(--brown)' : 'var(--text-mid)' }};
-                display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;">
-                {{ $i + 1 }}
-            </div>
-            <span style="flex:1;font-weight:600;color:var(--brown);">{{ $menu->name_menu }}</span>
-            <span style="font-weight:800;color:var(--gold-dark);">{{ $menu->total_terjual ?? 0 }}x terjual</span>
-        </div>
-        @endforeach
-    </div>
-</div>
-@endif
-
-{{-- Tabel Transaksi --}}
+{{-- Results Table --}}
 <div class="card">
     <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-table" style="margin-right:7px;"></i>Detail Transaksi</span>
-        <span style="font-size:11px;color:rgba(245,233,192,.45);">
-            {{ \Carbon\Carbon::parse($dari ?? now()->startOfMonth())->format('d/m/Y') }}
-            — {{ \Carbon\Carbon::parse($sampai ?? now())->format('d/m/Y') }}
+        <span class="card-title">
+            <i class="fa-solid fa-table-list" style="margin-right:8px;"></i>
+            Data Orderan
+            @if(request('dari') && request('sampai'))
+                <span style="font-size:11px;font-weight:400;color:rgba(245,233,192,.55);margin-left:8px;">
+                    {{ \Carbon\Carbon::parse(request('dari'))->format('d/m/Y') }}
+                    — {{ \Carbon\Carbon::parse(request('sampai'))->format('d/m/Y') }}
+                </span>
+            @endif
         </span>
+        @if(request('dari'))
+        <a href="{{ route('admin.laporan.export', request()->all()) }}"
+            style="font-size:11px;color:var(--gold);background:rgba(201,162,39,.15);padding:3px 12px;border-radius:20px;text-decoration:none;font-weight:700;">
+            <i class="fa-solid fa-file-csv"></i> Export
+        </a>
+        @endif
     </div>
     <div class="card-body" style="padding:0;">
         <div class="table-wrap">
-            <table>
+            <table class="tabel-orderan">
                 <thead>
                     <tr>
-                        <th>Kode Transaksi</th>
-                        <th>No. Meja</th>
-                        <th>Kasir</th>
+                        <th>Kode Order</th>
+                        <th>Pelanggan</th>
+                        <th style="text-align:center;">No Meja</th>
+                        <th>Nama Menu</th>
+                        <th style="text-align:center;">Jumlah</th>
+                        <th>Sub Total</th>
+                        <th>Harga</th>
                         <th>Tanggal</th>
-                        <th>Waktu</th>
-                        <th>Total</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($transaksis as $trx)
+                    @forelse($rows as $row)
                     <tr>
-                        <td><span style="font-family:monospace;font-weight:700;font-size:12.5px;color:var(--brown);">{{ $trx->kd_transaksi }}</span></td>
-                        <td><span class="badge badge-brown">Meja {{ $trx->order->no_meja ?? '-' }}</span></td>
-                        <td>{{ $trx->kasir->name ?? '-' }}</td>
-                        <td style="color:var(--text-light);font-size:12.5px;">{{ $trx->tanggal?->format('d/m/Y') }}</td>
-                        <td style="color:var(--text-light);font-size:12.5px;">{{ $trx->waktu?->format('H:i') }}</td>
-                        <td><strong style="color:var(--gold-dark);">Rp {{ number_format($trx->total_harga, 0, ',', '.') }}</strong></td>
+                        <td style="font-weight:700;font-family:monospace;font-size:12.5px;color:var(--brown);">
+                            {{ $row['kode_order'] }}
+                        </td>
+                        <td>{{ $row['pelanggan'] }}</td>
+                        <td style="text-align:center;">
+                            <span class="badge badge-brown" style="font-size:11px;">{{ $row['no_meja'] }}</span>
+                        </td>
+                        <td style="font-weight:600;color:var(--text-dark);">{{ $row['nama_menu'] }}</td>
+                        <td style="text-align:center;font-weight:700;">{{ $row['jumlah'] }}</td>
+                        <td style="font-weight:700;color:var(--text-mid);">
+                            Rp. {{ number_format($row['sub_total'], 0, ',', '.') }}
+                        </td>
+                        <td style="font-weight:700;color:var(--gold-dark);">
+                            Rp. {{ number_format($row['harga'], 0, ',', '.') }}
+                        </td>
+                        <td style="font-size:12.5px;color:var(--text-light);">
+                            {{ $row['tanggal'] }}
+                        </td>
                     </tr>
                     @empty
-                    <tr><td colspan="6">
-                        <div class="empty-state"><div class="empty-icon">📊</div><p>Tidak ada data pada periode ini</p></div>
-                    </td></tr>
+                    <tr>
+                        <td colspan="8">
+                            <div class="empty-state" style="padding:48px 24px;">
+                                <div class="empty-icon">📊</div>
+                                @if(!request('dari'))
+                                    <p style="font-weight:600;color:var(--brown);margin-bottom:4px;">Pilih periode terlebih dahulu</p>
+                                    <p style="font-size:12px;">Masukkan rentang tanggal dan klik <strong>Search</strong></p>
+                                @else
+                                    <p>Tidak ada data pada periode ini</p>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
+                @if(count($rows) > 0)
+                <tfoot>
+                    <tr style="background:var(--cream);">
+                        <td colspan="4" style="text-align:right;font-weight:700;font-size:13px;padding:10px 14px;color:var(--text-mid);">
+                            Total ({{ count($rows) }} item)
+                        </td>
+                        <td style="text-align:center;font-weight:800;font-size:13px;padding:10px 14px;">
+                            {{ collect($rows)->sum('jumlah') }}
+                        </td>
+                        <td style="font-weight:800;font-size:13px;padding:10px 14px;color:var(--text-dark);">
+                            Rp. {{ number_format(collect($rows)->sum('sub_total'), 0, ',', '.') }}
+                        </td>
+                        <td colspan="2" style="padding:10px 14px;font-weight:800;font-size:13px;color:var(--gold-dark);">
+                            Rp. {{ number_format(collect($rows)->sum('harga'), 0, ',', '.') }}
+                        </td>
+                    </tr>
+                </tfoot>
+                @endif
             </table>
         </div>
     </div>
 </div>
 
+{{-- Sub nav --}}
+<div style="margin-top:16px;display:flex;gap:10px;">
+    <a href="{{ route('admin.laporan.transaksi') }}" class="nav-tab">
+        <i class="fa-solid fa-receipt"></i> Kelola Transaksi
+    </a>
+    <a href="{{ route('admin.laporan.orderan') }}" class="nav-tab active">
+        <i class="fa-solid fa-clipboard-list"></i> Orderan per Periode
+    </a>
+</div>
+
 @endsection
 
+@push('styles')
+<style>
+.periode-input {
+    background: #fff;
+    border: 1.5px solid var(--cream-dark);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    color: var(--text-dark);
+    transition: border-color .2s;
+    width: 100%;
+}
+.periode-input:focus { border-color: var(--gold); outline: none; }
+
+.btn-periode-search {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 22px;
+    background: rgba(201,162,39,.2);
+    border: 1.5px solid var(--gold);
+    border-radius: 10px;
+    color: var(--brown);
+    font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+    transition: all .2s;
+}
+.btn-periode-search:hover { background: rgba(201,162,39,.35); }
+
+.btn-periode-reload {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 22px;
+    background: rgba(201,162,39,.15);
+    border: 1.5px solid rgba(201,162,39,.35);
+    border-radius: 10px;
+    color: var(--brown);
+    font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+    transition: all .2s;
+}
+.btn-periode-reload:hover { background: rgba(201,162,39,.25); }
+
+.tabel-orderan thead th {
+    background: var(--brown);
+    color: var(--gold);
+    font-size: 12.5px;
+    padding: 12px 14px;
+}
+.tabel-orderan tbody tr:hover { background: var(--cream); }
+.tabel-orderan tbody td { padding: 10px 14px; font-size: 13px; }
+
+.nav-tab {
+    display:inline-flex; align-items:center; gap:7px;
+    padding:8px 18px; border-radius:10px; font-size:13px; font-weight:600;
+    text-decoration:none;
+    background:#fff; color:var(--text-mid);
+    border:1.5px solid var(--cream-dark);
+    transition:var(--transition);
+}
+.nav-tab:hover, .nav-tab.active {
+    background:var(--brown); color:var(--gold);
+    border-color:var(--brown);
+}
+@media print {
+    .sidebar,.topbar,div[style*="margin-top:16px"],
+    .breadcrumb-bar,.card:first-of-type .card-body form { display:none!important; }
+    .main-content { margin-left:0!important; }
+}
+</style>
+@endpush
+
 @push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-const hariCtx = document.getElementById('hariChart')?.getContext('2d');
-if (hariCtx) {
-    new Chart(hariCtx, {
-        type: 'line',
-        data: {
-            labels: @json(($perHari ?? collect())->pluck('tgl')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d/m'))),
-            datasets: [{
-                label: 'Pendapatan',
-                data: @json(($perHari ?? collect())->pluck('total')),
-                borderColor: '#c9a227',
-                backgroundColor: 'rgba(201,162,39,.1)',
-                borderWidth: 2.5,
-                pointBackgroundColor: '#c9a227',
-                pointRadius: 4,
-                fill: true,
-                tension: 0.4,
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: { legend: { display: false },
-                tooltip: { callbacks: { label: ctx => 'Rp ' + ctx.raw.toLocaleString('id-ID') }}
-            },
-            scales: {
-                y: { beginAtZero: true, ticks: { callback: v => 'Rp ' + (v/1000).toFixed(0)+'k', font:{size:11} }, grid:{color:'rgba(0,0,0,.04)'} },
-                x: { grid: { display: false }, ticks: { font:{size:11} } }
-            }
-        }
-    });
+function reloadPage() {
+    window.location.href = '{{ route("admin.laporan.orderan") }}';
 }
 </script>
 @endpush
