@@ -62,7 +62,7 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 
 ## Tugas Besar Implementasi Perancangan Perangkat Lunak 
 
-### 📌 Deskripsi Project ini merupakan aplikasi berbasis Laravel untuk sistem pemesanan menu restoran D'Nusa, sebagai implementasi dari perancangan perangkat lunak pada mata kuliah IPPL.  
+## 📌 Deskripsi Project ini merupakan aplikasi berbasis Laravel untuk sistem pemesanan menu restoran D'Nusa, sebagai implementasi dari perancangan perangkat lunak pada mata kuliah IPPL.  
 
 ## 👨‍💻 Anggota Kelompok 
 | NIM           | Nama Lengkap                |  
