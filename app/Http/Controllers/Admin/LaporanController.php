@@ -20,8 +20,8 @@ class LaporanController extends Controller
             $dari   = $request->dari;
             $sampai = $request->sampai;
 
-            // Ambil semua detail order dalam periode
-            $details = \App\Models\DetailOrder::with(['order.meja', 'menu'])
+            // Ambil semua detail order beserta relasi dalam periode
+            $details = DetailOrder::with(['order.pelanggan', 'menu'])
                 ->whereHas('order', function ($q) use ($dari, $sampai) {
                     $q->whereDate('tanggal', '>=', $dari)
                       ->whereDate('tanggal', '<=', $sampai);
@@ -29,16 +29,21 @@ class LaporanController extends Controller
                 ->get();
 
             foreach ($details as $d) {
+                // Nama pelanggan: ambil dari relasi pelanggan atau fallback nama_user
+                $namaPelanggan = $d->order->pelanggan->name_pelanggan
+                    ?? $d->order->nama_user
+                    ?? 'Tamu';
+
                 $rows[] = [
-                    'kode_order' => $d->order->kd_order    ?? '-',
-                    'pelanggan'  => $d->order->nama_user   ?? 'Tamu',
-                    'no_meja'    => $d->order->no_meja     ?? '-',
-                    'nama_menu'  => $d->menu->name_menu    ?? '-',
+                    'kode_order' => $d->order->kd_order  ?? '-',
+                    'pelanggan'  => $namaPelanggan,
+                    'no_meja'    => $d->order->no_meja   ?? '-',
+                    'nama_menu'  => $d->menu->name_menu  ?? '-',
                     'jumlah'     => $d->total,
                     'sub_total'  => $d->sub_total,
-                    'harga'      => $d->menu->harga        ?? 0,
+                    'harga'      => $d->menu->harga      ?? 0,
                     'tanggal'    => $d->order->tanggal
-                        ? \Carbon\Carbon::parse($d->order->tanggal)->format('Y-m-d')
+                        ? Carbon::parse($d->order->tanggal)->format('Y-m-d')
                         : '-',
                 ];
             }

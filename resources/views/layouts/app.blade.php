@@ -62,9 +62,30 @@
                 <a href="{{ route('admin.transaksi.index') }}" class="nav-item {{ request()->routeIs('admin.transaksi.*') ? 'active' : '' }}">
                     <span class="nav-icon"><i class="fa-solid fa-cash-register"></i></span> Transaksi
                 </a>
-                <a href="{{ route('admin.laporan.transaksi') }}" class="nav-item {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}">
-                    <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span> Laporan
-                </a>
+                {{-- Laporan accordion --}}
+                <div class="nav-group" id="navLaporanGroup">
+                    <div class="nav-item nav-parent {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}"
+                        onclick="toggleNavGroup('navLaporanSub')" style="cursor:pointer;justify-content:space-between;">
+                        <span style="display:flex;align-items:center;gap:11px;">
+                            <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span> Laporan
+                        </span>
+                        <i class="fa-solid fa-chevron-down" id="navLaporanChevron"
+                            style="font-size:10px;color:rgba(201,162,39,.5);transition:transform .2s;
+                            {{ request()->routeIs('admin.laporan.*') ? 'transform:rotate(180deg);' : '' }}"></i>
+                    </div>
+                    <div id="navLaporanSub" style="{{ request()->routeIs('admin.laporan.*') ? '' : 'display:none;' }}">
+                        <a href="{{ route('admin.laporan.transaksi') }}"
+                            class="nav-item nav-sub {{ request()->routeIs('admin.laporan.transaksi') ? 'active' : '' }}">
+                            <span class="nav-icon" style="font-size:11px;"><i class="fa-solid fa-receipt"></i></span>
+                            Kelola Transaksi
+                        </a>
+                        <a href="{{ route('admin.laporan.orderan') }}"
+                            class="nav-item nav-sub {{ request()->routeIs('admin.laporan.orderan') ? 'active' : '' }}">
+                            <span class="nav-icon" style="font-size:11px;"><i class="fa-solid fa-clipboard-list"></i></span>
+                            Orderan per Periode
+                        </a>
+                    </div>
+                </div>
             @elseif(auth()->user()->isKasir())
                 <div class="nav-section-label">Menu Kasir</div>
                 <a href="{{ route('kasir.dashboard') }}" class="nav-item {{ request()->routeIs('kasir.dashboard') ? 'active' : '' }}">
@@ -280,6 +301,15 @@ setTimeout(() => {
         setTimeout(()=>el.remove(), 500);
     });
 }, 4000);
+
+// ─── Sidebar Laporan Accordion ──────────────────────────
+function toggleNavGroup(subId) {
+    const sub = document.getElementById(subId);
+    const chevron = document.getElementById('navLaporanChevron');
+    const isOpen = sub.style.display !== 'none';
+    sub.style.display = isOpen ? 'none' : 'block';
+    if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+}
 
 // ─── Topbar Search ──────────────────────────────────────
 function toggleTopbarSearch(e) {

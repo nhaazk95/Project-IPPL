@@ -32,11 +32,10 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Kode User</th>
+                        <th>Kode User & Level</th>
                         <th>Nama</th>
                         <th>Username</th>
                         <th>Email</th>
-                        <th>Level</th>
                         <th>Dibuat</th>
                         <th style="text-align:center;">Aksi</th>
                     </tr>
@@ -44,7 +43,20 @@
                 <tbody>
                     @forelse($users as $user)
                     <tr>
-                        <td><span style="font-family:monospace;font-size:12px;font-weight:600;color:var(--brown);">{{ $user->kd_user }}</span></td>
+                        <td>
+                            <div style="display:flex;flex-direction:column;gap:5px;">
+                                <span style="font-family:monospace;font-size:12px;font-weight:600;color:var(--brown);">{{ $user->kd_user }}</span>
+                                @php
+                                    $lvName  = strtolower($user->level->nama_level ?? '');
+                                    $lvClass = $lvName === 'admin' ? 'badge-brown' : ($lvName === 'kasir' ? 'badge-gold' : 'badge-info');
+                                    $lvIcon  = $lvName === 'admin' ? 'fa-crown' : ($lvName === 'kasir' ? 'fa-cash-register' : 'fa-user');
+                                @endphp
+                                <span class="badge {{ $lvClass }}" style="width:fit-content;">
+                                    <i class="fa-solid {{ $lvIcon }}" style="font-size:9px;"></i>
+                                    {{ $user->level->nama_level ?? '-' }}
+                                </span>
+                            </div>
+                        </td>
                         <td>
                             <div style="display:flex;align-items:center;gap:9px;">
                                 <div style="width:34px;height:34px;border-radius:50%;background:var(--gold);color:var(--brown);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex-shrink:0;">
@@ -55,12 +67,6 @@
                         </td>
                         <td style="font-weight:500;">{{ $user->username }}</td>
                         <td style="color:var(--text-light);font-size:12.5px;">{{ $user->email }}</td>
-                        <td>
-                            <span class="badge {{ $user->isAdmin() ? 'badge-brown' : 'badge-gold' }}">
-                                <i class="fa-solid fa-{{ $user->isAdmin() ? 'crown' : 'cash-register' }}" style="font-size:10px;"></i>
-                                {{ $user->level->nama_level ?? '-' }}
-                            </span>
-                        </td>
                         <td style="font-size:12px;color:var(--text-light);">{{ $user->created_at?->format('d/m/Y') }}</td>
                         <td>
                             <div style="display:flex;gap:6px;justify-content:center;">
@@ -77,7 +83,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7">
+                        <td colspan="6">
                             <div class="empty-state"><div class="empty-icon">👤</div><p>Belum ada user terdaftar</p></div>
                         </td>
                     </tr>
@@ -88,7 +94,7 @@
     </div>
 </div>
 
-<div class="pagination mt-24">{{ $users->withQueryString()->links('vendor.pagination.simple') }}</div>
+<div class="pagination-wrap mt-24">{{ $users->withQueryString()->links('vendor.pagination.simple') }}</div>
 
 {{-- CREATE MODAL --}}
 <div class="modal-backdrop" id="createModal">
