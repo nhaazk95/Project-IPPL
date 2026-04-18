@@ -57,3 +57,57 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+# 🍽️ Sistem Pemesanan Menu di Restaurant ## Tugas Besar Implementasi Perancangan Perangkat Lunak 
+
+## 📌 Deskripsi Project ini merupakan aplikasi berbasis Laravel untuk sistem pemesanan menu restoran, sebagai implementasi dari perancangan perangkat lunak pada mata kuliah IPPL.  
+
+## 👨‍💻 Anggota Kelompok 
+| NIM           | Nama Lengkap                |  
+|---------------|-----------------------------| 
+| 103112400041  | Bertha Adela                |       
+| 103112400085  | Anastasia Adinda            |        
+| 103112400144  | Devi Nurliana               | 
+| 103112400198  | Izzah Minkhotun Fannisa     | 
+| 103112400201  | Syifa Khairunnisa Irwanti   |  
+| 103112400230  | Galuh Maharani              | 
+| 2311102316    | Boutefhika Nuha Zidayatul K.| 
+
+## 🚀 Fitur Utama
+### 👨‍💼 Admin
+- Mengelola data user (admin, kasir, pelanggan)
+- Mengelola data menu (tambah, edit, hapus menu)
+- Mengatur kategori menu
+- Melihat laporan 
+- Mengelola data meja
+
+### 🧾 Kasir
+- Melayani pemesanan pelanggan
+- Menginput transaksi
+- Mengelola pembayaran
+- Mencetak struk / bukti pembayaran
+- Melihat daftar pesanan yang masuk
+
+### 👤 Pelanggan
+- Melihat daftar menu
+- Melakukan pemesanan makanan/minuman
+- Memilih meja / layanan
+- Melihat status pesanan
+  
+## 🛠️ Teknologi
+- Backend: Laravel (PHP)
+- Frontend: HTML, CSS, Bootstrap, JavaScript
+- Database: MySQL
+  
+## ⚙️ Cara Menjalankan Project
+```
+git clone https://github.com/nhaazk95/Project-IPPL.git
+cd Project-IPPL
+
+composer install
+cp .env.example .env
+php artisan key:generate
+
+php artisan migrate
+php artisan serve
+```
