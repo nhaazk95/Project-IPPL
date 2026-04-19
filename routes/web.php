@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// routes/web.php — DNUSA Resto
+// routes/web.php — DNUSA Resto (FIXED)
 // ============================================================
 
 use Illuminate\Support\Facades\Route;
@@ -10,7 +10,6 @@ use App\Http\Controllers\Admin\MenuController;
 use App\Http\Controllers\Admin\KategoriController;
 use App\Http\Controllers\Admin\MejaController;
 use App\Http\Controllers\Admin\LevelController;
-use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\TransaksiController as AdminTransaksi;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Kasir\DashboardController as KasirDashboard;
@@ -49,29 +48,32 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
+    Route::resource('level',    LevelController::class)->only(['index','update']);
     Route::resource('menu',     MenuController::class);
     Route::resource('kategori', KategoriController::class);
     Route::resource('meja',     MejaController::class);
-    Route::resource('level',    LevelController::class);
-    Route::resource('user',     UserController::class)->except(['show', 'create', 'edit']);
 
-    Route::get('/transaksi',               [AdminTransaksi::class, 'index'])->name('transaksi.index');
-    Route::post('/transaksi/{kd_order}/bayar', [AdminTransaksi::class, 'bayar'])->name('transaksi.bayar');
-    Route::get('/transaksi/{id}',          [AdminTransaksi::class, 'show'])->name('transaksi.show');
+    Route::get('/transaksi',                    [AdminTransaksi::class, 'index'])->name('transaksi.index');
+    Route::post('/transaksi/{kd_order}/bayar',  [AdminTransaksi::class, 'bayar'])->name('transaksi.bayar');
+    Route::get('/transaksi/{id}',               [AdminTransaksi::class, 'show'])->name('transaksi.show');
 
-    Route::get('/laporan/orderan',                    [LaporanController::class, 'orderan'])->name('laporan.orderan');
-    Route::get('/laporan/orderan/export',             [LaporanController::class, 'exportOrderan'])->name('laporan.export');
-    Route::get('/laporan/transaksi',                  [LaporanController::class, 'transaksi'])->name('laporan.transaksi');
-    Route::get('/laporan/transaksi/export',           [LaporanController::class, 'exportTransaksi'])->name('laporan.transaksi.export');
+    Route::get('/laporan/orderan',              [LaporanController::class, 'orderan'])->name('laporan.orderan');
+    Route::get('/laporan/orderan/export',       [LaporanController::class, 'exportOrderan'])->name('laporan.export');
+    Route::get('/laporan/transaksi',            [LaporanController::class, 'transaksi'])->name('laporan.transaksi');
+    Route::get('/laporan/transaksi/export',     [LaporanController::class, 'exportTransaksi'])->name('laporan.transaksi.export');
 });
 
-// ── Kasir ─────────────────────────────────────────────────
+// ── Kasir (FIXED DI SINI) ─────────────────────────────────
 Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->name('kasir.')->group(function () {
     Route::get('/dashboard',               [KasirDashboard::class, 'index'])->name('dashboard');
+
     Route::get('/order',                   [OrderController::class, 'index'])->name('order');
     Route::get('/order/{kd_order}',        [OrderController::class, 'detail'])->name('order.detail');
     Route::post('/order/{kd_order}/bayar', [OrderController::class, 'prosesBayar'])->name('proses-bayar');
-    Route::get('/transaksi',               [KasirTransaksi::class, 'index'])->name('transaksi');
+
+    // ✅ FIX DI SINI (sebelumnya 'transaksi')
+    Route::get('/transaksi',               [KasirTransaksi::class, 'index'])->name('transaksi.index');
+
     Route::get('/struk/{kd_transaksi}',    [KasirTransaksi::class, 'struk'])->name('struk');
     Route::get('/laporan',                 [KasirTransaksi::class, 'laporan'])->name('laporan');
 

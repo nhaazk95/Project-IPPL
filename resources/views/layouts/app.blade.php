@@ -43,6 +43,9 @@
                     <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span> Dashboard
                 </a>
                 <div class="nav-section-label">Manajemen</div>
+                <a href="{{ route('admin.level.index') }}" class="nav-item {{ request()->routeIs('admin.level.*') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="fa-solid fa-shield-halved"></i></span> Level
+                </a>
                 <a href="{{ route('admin.menu.index') }}" class="nav-item {{ request()->routeIs('admin.menu.*') ? 'active' : '' }}">
                     <span class="nav-icon"><i class="fa-solid fa-utensils"></i></span> Data Menu
                 </a>
@@ -52,16 +55,11 @@
                 <a href="{{ route('admin.meja.index') }}" class="nav-item {{ request()->routeIs('admin.meja.*') ? 'active' : '' }}">
                     <span class="nav-icon"><i class="fa-solid fa-chair"></i></span> Meja
                 </a>
-                <a href="{{ route('admin.level.index') }}" class="nav-item {{ request()->routeIs('admin.level.*') ? 'active' : '' }}">
-                    <span class="nav-icon"><i class="fa-solid fa-shield-halved"></i></span> Level User
-                </a>
-                <a href="{{ route('admin.user.index') }}" class="nav-item {{ request()->routeIs('admin.user.*') ? 'active' : '' }}">
-                    <span class="nav-icon"><i class="fa-solid fa-users"></i></span> Data User
-                </a>
-                <div class="nav-section-label">Laporan</div>
                 <a href="{{ route('admin.transaksi.index') }}" class="nav-item {{ request()->routeIs('admin.transaksi.*') ? 'active' : '' }}">
                     <span class="nav-icon"><i class="fa-solid fa-cash-register"></i></span> Transaksi
                 </a>
+
+                <div class="nav-section-label">Laporan</div>
                 {{-- Laporan accordion --}}
                 <div class="nav-group" id="navLaporanGroup">
                     <div class="nav-item nav-parent {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}"
@@ -91,8 +89,8 @@
                 <a href="{{ route('kasir.dashboard') }}" class="nav-item {{ request()->routeIs('kasir.dashboard') ? 'active' : '' }}">
                     <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span> Dashboard
                 </a>
-                <a href="{{ route('kasir.order') }}" class="nav-item {{ request()->routeIs('kasir.order*') ? 'active' : '' }}">
-                    <span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span> Transaksi
+                <a href="{{ route('kasir.transaksi.index') }}" class="nav-item {{ request()->routeIs('kasir.transaksi*') ? 'active' : '' }}">
+                    <span class="nav-icon"><i class="fa-solid fa-cash-register"></i></span> Transaksi
                 </a>
                 <a href="{{ route('kasir.laporan') }}" class="nav-item {{ request()->routeIs('kasir.laporan') ? 'active' : '' }}">
                     <span class="nav-icon"><i class="fa-solid fa-file-invoice"></i></span> Laporan

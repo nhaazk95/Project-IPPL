@@ -1,6 +1,6 @@
 @extends('layouts.app')
-@section('title', 'Riwayat Transaksi — Kasir')
-@section('page-title', 'Riwayat Transaksi')
+@section('title', 'Transaksi — Kasir')
+@section('page-title', 'Transaksi')
 
 @section('breadcrumb')
     <a href="{{ route('kasir.dashboard') }}">Dashboard</a>
@@ -10,94 +10,283 @@
 
 @section('content')
 
-<div class="flex-between mb-20">
-    <div>
-        <p class="ph-title"><i class="fa-solid fa-receipt" style="margin-right:8px;color:var(--gold);"></i>Transaksi Hari Ini</p>
-        <p class="ph-sub">{{ now()->isoFormat('dddd, D MMMM Y') }}</p>
-    </div>
-    <div class="search-box">
-        <span class="icon"><i class="fa-solid fa-magnifying-glass"></i></span>
-        <input type="text" id="searchInput" placeholder="Cari transaksi..." oninput="filterTable()">
-    </div>
-</div>
+<div class="trx-layout">
 
-{{-- Summary --}}
-<div class="grid-3 mb-20">
-    <div class="stat-card">
-        <div class="stat-icon gold"><i class="fa-solid fa-receipt"></i></div>
-        <div>
-            <div class="stat-value">{{ $transaksis->count() }}</div>
-            <div class="stat-label">Transaksi Hari Ini</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon green"><i class="fa-solid fa-money-bill-wave"></i></div>
-        <div>
-            <div class="stat-value" style="font-size:17px;">Rp {{ number_format($transaksis->sum('total_harga'), 0, ',', '.') }}</div>
-            <div class="stat-label">Total Pendapatan</div>
-        </div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-icon blue"><i class="fa-solid fa-chart-bar"></i></div>
-        <div>
-            @php $avg = $transaksis->count() > 0 ? $transaksis->sum('total_harga') / $transaksis->count() : 0; @endphp
-            <div class="stat-value" style="font-size:17px;">Rp {{ number_format($avg, 0, ',', '.') }}</div>
-            <div class="stat-label">Rata-rata / Transaksi</div>
-        </div>
-    </div>
-</div>
+    {{-- ===== KIRI: Pilih Orderan ===== --}}
+    <div class="trx-left">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title"><i class="fa-solid fa-clipboard-list" style="margin-right:8px;"></i>Pilih Orderan</span>
+                <span style="font-size:11px;color:rgba(245,233,192,.5);">{{ $orders->total() }} order aktif</span>
+            </div>
 
-<div class="card">
-    <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-table-list" style="margin-right:7px;"></i>Data Transaksi</span>
-    </div>
-    <div class="card-body" style="padding:0;">
-        <div class="table-wrap">
-            <table id="trxTable">
-                <thead>
-                    <tr>
-                        <th>Kode Transaksi</th>
-                        <th>No. Meja</th>
-                        <th>Pelanggan</th>
-                        <th>Waktu</th>
-                        <th>Total</th>
-                        <th style="text-align:center;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($transaksis as $trx)
-                    <tr>
-                        <td><span style="font-family:monospace;font-weight:700;font-size:12.5px;color:var(--brown);">{{ $trx->kd_transaksi }}</span></td>
-                        <td><span class="badge badge-brown">Meja {{ $trx->order->no_meja ?? '-' }}</span></td>
-                        <td style="color:var(--text-mid);">{{ $trx->order->nama_user ?? '-' }}</td>
-                        <td style="color:var(--text-light);font-size:12.5px;">{{ $trx->waktu?->format('H:i') }}</td>
-                        <td><strong style="color:var(--gold-dark);">Rp {{ number_format($trx->total_harga, 0, ',', '.') }}</strong></td>
-                        <td style="text-align:center;">
-                            <a href="{{ route('kasir.struk', $trx->kd_transaksi) }}" class="btn-secondary btn-sm" target="_blank">
-                                <i class="fa-solid fa-print"></i> Struk
-                            </a>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="6">
-                        <div class="empty-state"><div class="empty-icon">🧾</div><p>Belum ada transaksi hari ini</p></div>
-                    </td></tr>
-                    @endforelse
-                </tbody>
-            </table>
+            {{-- Show & Search --}}
+            <div style="padding:12px 16px;border-bottom:1px solid var(--cream-dark);
+                display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-light);">
+                    Show
+                    <select onchange="window.location.href='?per_page='+this.value"
+                        class="form-control" style="width:60px;padding:4px 8px;font-size:12px;">
+                        @foreach([10,25,50] as $n)
+                            <option value="{{ $n }}" {{ request('per_page',10)==$n?'selected':'' }}>{{ $n }}</option>
+                        @endforeach
+                    </select>
+                    entries
+                </div>
+                <form method="GET" style="display:flex;gap:6px;align-items:center;">
+                    <input type="hidden" name="per_page" value="{{ request('per_page',10) }}">
+                    <label style="font-size:13px;color:var(--text-light);">Search</label>
+                    <input type="text" name="search" value="{{ request('search') }}"
+                        class="form-control" style="width:150px;padding:5px 10px;font-size:12px;"
+                        placeholder="Kode / nama...">
+                </form>
+            </div>
+
+            <div class="card-body" style="padding:0;">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Kode Order</th>
+                                <th style="text-align:center;">No Meja</th>
+                                <th>Pelanggan</th>
+                                <th>Total</th>
+                                <th style="text-align:center;">Pilih</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($orders as $order)
+                            @php
+                                $total = $order->detailOrders->sum('sub_total');
+                                $nama  = $order->pelanggan->name_pelanggan
+                                      ?? $order->nama_user
+                                      ?? 'Tamu';
+                            @endphp
+                            <tr class="order-row" style="cursor:pointer;"
+                                onclick="pilihOrder(
+                                    '{{ $order->kd_order }}',
+                                    '{{ $order->no_meja }}',
+                                    '{{ addslashes($nama) }}',
+                                    '{{ $total }}'
+                                )">
+                                <td style="font-weight:700;font-family:monospace;font-size:12.5px;color:var(--brown);">
+                                    {{ $order->kd_order }}
+                                    @if($order->pelanggan)
+                                        <span class="badge badge-info" style="font-size:9px;margin-left:4px;">Online</span>
+                                    @endif
+                                </td>
+                                <td style="text-align:center;">
+                                    <span class="badge badge-brown">{{ $order->no_meja }}</span>
+                                </td>
+                                <td>
+                                    <div style="font-weight:600;font-size:13px;">{{ $nama }}</div>
+                                    @if($order->pelanggan)
+                                    <div style="font-size:10.5px;color:var(--text-light);">
+                                        <i class="fa-solid fa-mobile-alt" style="font-size:9px;"></i>
+                                        Bayar via Kasir
+                                    </div>
+                                    @endif
+                                </td>
+                                <td style="font-weight:700;color:var(--gold-dark);">
+                                    Rp {{ number_format($total, 0, ',', '.') }}
+                                </td>
+                                <td style="text-align:center;">
+                                    <button class="btn-gold btn-sm"
+                                        onclick="event.stopPropagation();pilihOrder(
+                                            '{{ $order->kd_order }}',
+                                            '{{ $order->no_meja }}',
+                                            '{{ addslashes($nama) }}',
+                                            '{{ $total }}'
+                                        )">
+                                        Pilih
+                                    </button>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr><td colspan="5">
+                                <div class="empty-state" style="padding:32px;">
+                                    <div class="empty-icon">✅</div>
+                                    <p>Tidak ada order aktif</p>
+                                </div>
+                            </td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {{-- Pagination --}}
+            <div style="padding:10px 16px;border-top:1px solid var(--cream-dark);font-size:12px;
+                color:var(--text-light);display:flex;justify-content:space-between;align-items:center;">
+                <span>Showing {{ $orders->firstItem() ?? 0 }} to {{ $orders->lastItem() ?? 0 }} of {{ $orders->total() }} entries</span>
+                <div style="display:flex;gap:6px;">
+                    @if($orders->onFirstPage())
+                        <span class="btn-secondary btn-sm" style="opacity:.4;cursor:default;">Previous</span>
+                    @else
+                        <a href="{{ $orders->previousPageUrl() }}" class="btn-secondary btn-sm">Previous</a>
+                    @endif
+                    <span class="btn-gold btn-sm">{{ $orders->currentPage() }}</span>
+                    @if($orders->hasMorePages())
+                        <a href="{{ $orders->nextPageUrl() }}" class="btn-secondary btn-sm">Next</a>
+                    @else
+                        <span class="btn-secondary btn-sm" style="opacity:.4;cursor:default;">Next</span>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
+
+    {{-- ===== KANAN: Form Pembayaran ===== --}}
+    <div class="trx-right">
+        <div class="card" style="position:sticky;top:80px;">
+            <div class="card-header">
+                <span class="card-title"><i class="fa-solid fa-cash-register" style="margin-right:8px;"></i>Transaksi Pembayaran</span>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="formBayar" action="">
+                    @csrf
+
+                    <div class="form-group">
+                        <label class="form-label">Kode Order</label>
+                        <input type="text" id="fKdOrder" class="form-control" readonly
+                            placeholder="Pilih order dari tabel"
+                            style="background:var(--cream);">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Pelanggan</label>
+                        <input type="text" id="fNama" class="form-control" readonly
+                            placeholder="—"
+                            style="background:var(--cream);">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Total Harga</label>
+                        <div id="fTotal" style="background:var(--cream);border:2px solid var(--gold);
+                            border-radius:10px;padding:11px 14px;font-size:20px;font-weight:800;
+                            color:var(--gold-dark);text-align:center;">
+                            Rp 0
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Bayar</label>
+                        <input type="number" id="fBayar" name="jumlah_bayar" class="form-control"
+                            placeholder="Masukkan jumlah uang" min="0"
+                            oninput="hitungKembalian()" style="font-size:15px;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">Kembalian</label>
+                        <div id="fKembalian" style="background:var(--cream);border:1.5px solid var(--cream-dark);
+                            border-radius:10px;padding:11px 14px;font-size:16px;font-weight:700;
+                            color:var(--text-light);text-align:center;transition:all .2s;">
+                            —
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:10px;margin-top:16px;">
+                        <button type="button" class="btn-secondary"
+                            style="flex:1;justify-content:center;padding:11px;"
+                            onclick="resetForm()">
+                            <i class="fa-solid fa-rotate-left"></i> Reset
+                        </button>
+                        <button type="submit" id="btnSimpan" class="btn-gold" disabled
+                            style="flex:1;justify-content:center;padding:11px;opacity:.5;cursor:not-allowed;">
+                            <i class="fa-solid fa-floppy-disk"></i> Simpan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 @endsection
 
+@push('styles')
+<style>
+.trx-layout { display:grid; grid-template-columns:1fr 360px; gap:20px; align-items:start; }
+.order-row:hover { background:var(--gold-pale) !important; }
+.order-row.selected { background:rgba(201,162,39,.08) !important; outline:2px solid var(--gold); }
+@media(max-width:900px) { .trx-layout { grid-template-columns:1fr; } }
+</style>
+@endpush
+
 @push('scripts')
 <script>
-function filterTable() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    document.querySelectorAll('#trxTable tbody tr').forEach(row => {
-        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+let selectedOrderKd = '';
+let selectedTotal   = 0;
+
+function pilihOrder(kd, meja, nama, total) {
+    selectedOrderKd = kd;
+    selectedTotal   = parseInt(total) || 0;
+
+    // Highlight baris terpilih
+    document.querySelectorAll('.order-row').forEach(r => r.classList.remove('selected'));
+    // Cari baris yang diklik
+    document.querySelectorAll('.order-row').forEach(r => {
+        if (r.textContent.includes(kd)) r.classList.add('selected');
     });
+
+    document.getElementById('fKdOrder').value = kd + ' — Meja ' + meja;
+    document.getElementById('fNama').value    = nama;
+    document.getElementById('fTotal').textContent = 'Rp ' + selectedTotal.toLocaleString('id-ID');
+
+    // Set action ke kasir prosesBayar
+    document.getElementById('formBayar').action = '/kasir/order/' + kd + '/bayar';
+
+    // Aktifkan tombol simpan
+    const btn = document.getElementById('btnSimpan');
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+
+    // Reset bayar & kembalian
+    document.getElementById('fBayar').value = '';
+    resetKembalian();
+
+    // Scroll ke form di mobile
+    document.getElementById('formBayar').closest('.trx-right')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function hitungKembalian() {
+    const bayar = parseInt(document.getElementById('fBayar').value) || 0;
+    const el = document.getElementById('fKembalian');
+    if (!selectedOrderKd) return;
+
+    if (bayar >= selectedTotal) {
+        const kembalian = bayar - selectedTotal;
+        el.textContent  = 'Rp ' + kembalian.toLocaleString('id-ID');
+        el.style.cssText = 'background:rgba(26,122,74,.08);border:2px solid var(--success);border-radius:10px;padding:11px 14px;font-size:16px;font-weight:800;color:var(--success);text-align:center;transition:all .2s;';
+    } else if (bayar > 0) {
+        const kurang = selectedTotal - bayar;
+        el.textContent  = '⚠ Kurang Rp ' + kurang.toLocaleString('id-ID');
+        el.style.cssText = 'background:#fde8e8;border:2px solid var(--danger);border-radius:10px;padding:11px 14px;font-size:16px;font-weight:700;color:var(--danger);text-align:center;transition:all .2s;';
+    } else {
+        resetKembalian();
+    }
+}
+
+function resetKembalian() {
+    const el = document.getElementById('fKembalian');
+    el.textContent  = '—';
+    el.style.cssText = 'background:var(--cream);border:1.5px solid var(--cream-dark);border-radius:10px;padding:11px 14px;font-size:16px;font-weight:700;color:var(--text-light);text-align:center;transition:all .2s;';
+}
+
+function resetForm() {
+    selectedOrderKd = '';
+    selectedTotal   = 0;
+    document.querySelectorAll('.order-row').forEach(r => r.classList.remove('selected'));
+    document.getElementById('fKdOrder').value = '';
+    document.getElementById('fNama').value    = '';
+    document.getElementById('fBayar').value   = '';
+    document.getElementById('fTotal').textContent = 'Rp 0';
+    resetKembalian();
+    const btn = document.getElementById('btnSimpan');
+    btn.disabled = true; btn.style.opacity='.5'; btn.style.cursor='not-allowed';
 }
 </script>
 @endpush

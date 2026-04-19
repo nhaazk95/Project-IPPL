@@ -10,15 +10,13 @@ class MejaController extends Controller
 {
     public function index()
     {
-        $mejas = Meja::orderBy('no_meja')->paginate(50);
-
-        $all = Meja::all();
+        $mejas     = Meja::orderBy('no_meja')->paginate(20);
+        $totalMeja = Meja::count();
         $mejaStats = [
-            'tersedia' => $all->where('status', 'tersedia')->count(),
-            'terisi'   => $all->where('status', 'terisi')->count(),
+            'tersedia' => Meja::where('status', 'tersedia')->count(),
+            'terisi'   => Meja::where('status', 'terisi')->count(),
         ];
-
-        return view('admin.meja.index', compact('mejas', 'mejaStats'));
+        return view('admin.meja.index', compact('mejas', 'totalMeja', 'mejaStats'));
     }
 
     public function store(Request $request)
@@ -27,8 +25,8 @@ class MejaController extends Controller
             'no_meja' => 'required|integer|min:1|unique:mejas,no_meja',
             'status'  => 'required|in:tersedia,terisi',
         ]);
-        Meja::create(['no_meja' => $request->no_meja, 'status' => $request->status]);
-        return back()->with('success', 'Meja berhasil ditambahkan.');
+        Meja::create($request->only(['no_meja', 'status']));
+        return back()->with('success', 'Meja ' . $request->no_meja . ' berhasil ditambahkan.');
     }
 
     public function update(Request $request, string $id)

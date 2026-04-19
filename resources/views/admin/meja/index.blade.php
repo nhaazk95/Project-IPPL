@@ -14,7 +14,7 @@
     <div>
         <p class="ph-title"><i class="fa-solid fa-chair" style="color:var(--gold);margin-right:8px;"></i>Manajemen Meja</p>
         <p class="ph-sub">
-            {{ $mejas->total() }} meja total ·
+            {{ $totalMeja }} meja ·
             <span style="color:var(--success);font-weight:700;">{{ $mejaStats['tersedia'] }} tersedia</span> ·
             <span style="color:var(--danger);font-weight:700;">{{ $mejaStats['terisi'] }} terisi</span>
         </p>
@@ -25,105 +25,78 @@
 </div>
 
 {{-- Visual Grid Card --}}
-<div class="card mb-20">
+<div class="card">
     <div class="card-header">
         <span class="card-title"><i class="fa-solid fa-grip" style="margin-right:7px;"></i>Status Meja (Visual)</span>
-        <div style="display:flex;gap:16px;font-size:12px;align-items:center;">
+        <div style="display:flex;gap:14px;font-size:12px;align-items:center;">
             <span style="display:flex;align-items:center;gap:5px;">
-                <span style="width:14px;height:14px;border-radius:4px;background:rgba(26,122,74,.15);border:1.5px solid var(--success);display:inline-block;"></span>
+                <span style="width:11px;height:11px;border-radius:3px;background:rgba(26,122,74,.15);border:1.5px solid var(--success);display:inline-block;"></span>
                 Tersedia
             </span>
             <span style="display:flex;align-items:center;gap:5px;">
-                <span style="width:14px;height:14px;border-radius:4px;background:rgba(201,162,39,.15);border:1.5px solid var(--gold);display:inline-block;"></span>
+                <span style="width:11px;height:11px;border-radius:3px;background:rgba(201,162,39,.15);border:1.5px solid var(--gold);display:inline-block;"></span>
                 Terisi
             </span>
         </div>
     </div>
-    <div class="card-body" style="padding:22px;">
-        <div class="meja-grid">
+
+    <div class="card-body" style="padding:20px;">
+        <div class="meja-grid" id="mejaGrid">
             @foreach($mejas as $meja)
             @php $terisi = $meja->status === 'terisi'; @endphp
-            <div class="meja-cell {{ $terisi ? 'terisi' : 'tersedia' }}"
-                onclick="editMeja({{ $meja->toJson() }})" title="Klik untuk edit">
-                <div class="meja-chair-icon">
-                    {{-- Chair SVG icon --}}
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="30" height="30">
-                        <path d="M5 5a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v4H5V5zm-2 6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V11zm3 6h2v2H6v-2zm10 0h2v2h-2v-2z"/>
+            <div class="meja-box {{ $terisi ? 'terisi' : 'tersedia' }}"
+                onclick="editMeja({{ $meja->toJson() }})" title="Edit Meja {{ $meja->no_meja }}">
+                <div class="meja-chair">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 2a2 2 0 0 0-2 2v5H3a1 1 0 0 0-1 1v3a3 3 0 0 0 3 3h1v3a1 1 0 0 0 2 0v-3h8v3a1 1 0 0 0 2 0v-3h1a3 3 0 0 0 3-3V10a1 1 0 0 0-1-1h-1V4a2 2 0 0 0-2-2H6z"/>
                     </svg>
                 </div>
-                <div class="meja-number">{{ $meja->no_meja }}</div>
-                <div class="meja-status-text">{{ $terisi ? 'Terisi' : 'Kosong' }}</div>
+                <div class="meja-num">{{ $meja->no_meja }}</div>
+                <div class="meja-lbl">{{ $terisi ? 'Terisi' : 'Kosong' }}</div>
             </div>
             @endforeach
         </div>
     </div>
-</div>
 
-{{-- Data Table Card --}}
-<div class="card">
-    <div class="card-header">
-        <span class="card-title"><i class="fa-solid fa-table-list" style="margin-right:7px;"></i>Data Meja</span>
-    </div>
-    <div class="card-body" style="padding:0;">
-        <table>
-            <thead>
-                <tr>
-                    <th style="width:80px;">No. Meja</th>
-                    <th></th>
-                    <th>Status</th>
-                    <th style="text-align:center;">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($mejas as $meja)
-                @php $terisi = $meja->status === 'terisi'; @endphp
-                <tr>
-                    <td>
-                        <div style="width:36px;height:36px;border-radius:10px;background:var(--brown);color:var(--gold);
-                            display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;">
-                            {{ $meja->no_meja }}
-                        </div>
-                    </td>
-                    <td style="font-weight:600;color:var(--text-dark);">Meja {{ $meja->no_meja }}</td>
-                    <td>
-                        <span class="badge {{ $terisi ? 'badge-gold' : 'badge-success' }}">
-                            <i class="fa-solid fa-circle" style="font-size:7px;"></i>
-                            {{ $terisi ? 'Terisi' : 'Tersedia' }}
-                        </span>
-                    </td>
-                    <td style="text-align:center;">
-                        <div style="display:flex;gap:8px;justify-content:center;">
-                            <button class="btn-edit-meja" onclick="editMeja({{ $meja->toJson() }})">
-                                <i class="fa-solid fa-pen"></i> Edit
-                            </button>
-                            <form method="POST" action="{{ route('admin.meja.destroy', $meja->id) }}"
-                                onsubmit="return confirm('Hapus Meja {{ $meja->no_meja }}?')" style="margin:0;">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="btn-del-meja">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                @empty
-                <tr><td colspan="4">
-                    <div class="empty-state"><div class="empty-icon">🪑</div><p>Belum ada meja terdaftar</p></div>
-                </td></tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
+    {{-- Pagination --}}
+    <div style="padding:14px 20px;border-top:1px solid var(--cream-dark);
+        display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <span style="font-size:12.5px;color:var(--text-light);">
+            Halaman {{ $mejas->currentPage() }} dari {{ $mejas->lastPage() }}
+            · Total {{ $totalMeja }} meja
+        </span>
+        <div style="display:flex;gap:6px;align-items:center;">
+            {{-- Previous --}}
+            @if($mejas->onFirstPage())
+                <span class="meja-pg-btn disabled">Previous</span>
+            @else
+                <a href="{{ $mejas->previousPageUrl() }}" class="meja-pg-btn">Previous</a>
+            @endif
 
-{{-- Pagination besar --}}
-<div class="pagination-wrap mt-24">
-    {{ $mejas->links('vendor.pagination.simple') }}
+            {{-- Page numbers --}}
+            @for($p = 1; $p <= $mejas->lastPage(); $p++)
+                @if($p == $mejas->currentPage())
+                    <span class="meja-pg-num active">{{ $p }}</span>
+                @elseif($p == 1 || $p == $mejas->lastPage() || abs($p - $mejas->currentPage()) <= 1)
+                    <a href="{{ $mejas->url($p) }}" class="meja-pg-num">{{ $p }}</a>
+                @elseif(abs($p - $mejas->currentPage()) == 2)
+                    <span class="meja-pg-ellipsis">…</span>
+                @endif
+            @endfor
+
+            {{-- Next --}}
+            @if($mejas->hasMorePages())
+                <a href="{{ $mejas->nextPageUrl() }}" class="meja-pg-btn">Next</a>
+            @else
+                <span class="meja-pg-btn disabled">Next</span>
+            @endif
+        </div>
+    </div>
 </div>
 
 {{-- CREATE MODAL --}}
 <div class="modal-backdrop" id="createModal">
-    <div class="modal-box" style="max-width:380px;">
+    <div class="modal-box" style="max-width:360px;">
         <div class="modal-header">
             <span class="modal-title"><i class="fa-solid fa-plus" style="margin-right:7px;"></i>Tambah Meja</span>
             <button class="modal-close" onclick="closeModal('createModal')"><i class="fa-solid fa-xmark"></i></button>
@@ -153,9 +126,9 @@
 
 {{-- EDIT MODAL --}}
 <div class="modal-backdrop" id="editModal">
-    <div class="modal-box" style="max-width:380px;">
+    <div class="modal-box" style="max-width:360px;">
         <div class="modal-header">
-            <span class="modal-title"><i class="fa-solid fa-pen-to-square" style="margin-right:7px;"></i>Edit Meja</span>
+            <span class="modal-title"><i class="fa-solid fa-pen-to-square" style="margin-right:7px;"></i>Edit Meja <span id="editMejaTitle"></span></span>
             <button class="modal-close" onclick="closeModal('editModal')"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <form method="POST" id="editForm">
@@ -174,8 +147,15 @@
                 </div>
             </div>
             <div class="modal-footer">
+                <form method="POST" id="deleteForm" style="margin:0;">
+                    @csrf @method('DELETE')
+                    <button type="submit" class="btn-danger"
+                        onclick="return confirm('Hapus meja ini?')">
+                        <i class="fa-solid fa-trash"></i> Hapus
+                    </button>
+                </form>
                 <button type="button" class="btn-secondary" onclick="closeModal('editModal')">Batal</button>
-                <button type="submit" class="btn-gold"><i class="fa-solid fa-floppy-disk"></i> Perbarui</button>
+                <button type="submit" form="editForm" class="btn-gold"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
             </div>
         </form>
     </div>
@@ -185,61 +165,68 @@
 
 @push('styles')
 <style>
-/* Meja Grid */
+/* Grid meja - kotak kecil */
 .meja-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(82px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    gap: 10px;
 }
-.meja-cell {
-    border-radius: 14px;
-    padding: 14px 8px 10px;
+.meja-box {
+    border-radius: 12px;
+    padding: 10px 6px 8px;
     text-align: center;
     cursor: pointer;
-    transition: all .18s ease;
+    transition: all .18s;
     user-select: none;
 }
-.meja-cell:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(44,24,16,.12); }
-.meja-cell.tersedia {
+.meja-box:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(44,24,16,.12); }
+.meja-box.tersedia {
     background: rgba(26,122,74,.07);
-    border: 2px solid rgba(26,122,74,.35);
+    border: 1.5px solid rgba(26,122,74,.3);
 }
-.meja-cell.terisi {
+.meja-box.terisi {
     background: rgba(201,162,39,.1);
-    border: 2px solid rgba(201,162,39,.45);
+    border: 1.5px solid rgba(201,162,39,.4);
 }
-.meja-chair-icon {
+.meja-chair {
     display: flex; align-items: center; justify-content: center;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
-.meja-cell.tersedia .meja-chair-icon { color: #1a7a4a; }
-.meja-cell.terisi  .meja-chair-icon { color: #a07d1a; }
-.meja-number {
-    font-weight: 800; font-size: 15px; line-height: 1;
-}
-.meja-cell.tersedia .meja-number { color: #1a7a4a; }
-.meja-cell.terisi  .meja-number  { color: #a07d1a; }
-.meja-status-text {
-    font-size: 10.5px; font-weight: 600; margin-top: 3px;
-}
-.meja-cell.tersedia .meja-status-text { color: #1a7a4a; }
-.meja-cell.terisi  .meja-status-text  { color: #a07d1a; }
+.meja-chair svg { width: 22px; height: 22px; }
+.meja-box.tersedia .meja-chair { color: #1a7a4a; }
+.meja-box.terisi  .meja-chair { color: #a07d1a; }
+.meja-num { font-weight: 800; font-size: 13px; line-height: 1; }
+.meja-box.tersedia .meja-num { color: #1a7a4a; }
+.meja-box.terisi  .meja-num  { color: #a07d1a; }
+.meja-lbl { font-size: 9.5px; font-weight: 600; margin-top: 2px; }
+.meja-box.tersedia .meja-lbl { color: rgba(26,122,74,.7); }
+.meja-box.terisi  .meja-lbl  { color: rgba(160,125,26,.8); }
 
-/* Table buttons */
-.btn-edit-meja {
-    display:inline-flex;align-items:center;gap:5px;
-    padding:5px 14px;border-radius:8px;font-size:12px;font-weight:600;
-    background:var(--cream);border:1.5px solid var(--cream-mid);
-    color:var(--text-mid);cursor:pointer;transition:var(--transition);
+/* Pagination */
+.meja-pg-btn {
+    display: inline-flex; align-items: center;
+    padding: 7px 16px; border-radius: 9px;
+    font-size: 12.5px; font-weight: 600;
+    border: 1.5px solid var(--cream-dark);
+    background: #fff; color: var(--text-mid);
+    text-decoration: none; cursor: pointer;
+    transition: all .18s;
 }
-.btn-edit-meja:hover { background:var(--cream-dark); }
-.btn-del-meja {
-    display:inline-flex;align-items:center;gap:5px;
-    padding:5px 10px;border-radius:8px;font-size:12px;font-weight:600;
-    background:#fde8e8;border:1.5px solid #f5c6c6;
-    color:var(--danger);cursor:pointer;transition:var(--transition);
+.meja-pg-btn:hover:not(.disabled) {
+    background: var(--brown); color: var(--gold); border-color: var(--brown);
 }
-.btn-del-meja:hover { background:#fbd5d5; }
+.meja-pg-btn.disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
+.meja-pg-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 34px; height: 34px; border-radius: 9px;
+    font-size: 13px; font-weight: 700;
+    border: 1.5px solid var(--cream-dark);
+    background: #fff; color: var(--text-mid);
+    text-decoration: none; transition: all .18s;
+}
+.meja-pg-num:hover { background: var(--cream-dark); }
+.meja-pg-num.active { background: var(--brown); color: var(--gold); border-color: var(--brown); }
+.meja-pg-ellipsis { font-size: 13px; color: var(--text-light); padding: 0 2px; }
 </style>
 @endpush
 
@@ -247,10 +234,13 @@
 <script>
 function openModal(id)  { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
 function editMeja(m) {
-    document.getElementById('eNoMeja').value = m.no_meja;
-    document.getElementById('eStatus').value = m.status;
-    document.getElementById('editForm').action = '/admin/meja/' + m.id;
+    document.getElementById('eNoMeja').value  = m.no_meja;
+    document.getElementById('eStatus').value  = m.status;
+    document.getElementById('editMejaTitle').textContent = '— Meja ' + m.no_meja;
+    document.getElementById('editForm').action   = '/admin/meja/' + m.id;
+    document.getElementById('deleteForm').action = '/admin/meja/' + m.id;
     openModal('editModal');
 }
 </script>

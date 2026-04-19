@@ -5,90 +5,55 @@ namespace App\Http\Controllers\Kasir;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Transaksi;
-use App\Models\Meja;
 use Illuminate\Http\Request;
 
 class TransaksiController extends Controller
 {
     public function index(Request $request)
     {
-        // Order yang siap dibayar (status siap / selesai)
-        $orderSiap = Order::with(['meja', 'detailOrders.menu'])
-            ->whereIn('status_order', ['siap', 'diproses'])
-            ->whereDoesntHave('transaksi')
-            ->orderByDesc('waktu')
-            ->get();
+        $query = Order::with(['pelanggan', 'detailOrders.menu', 'meja'])
+            ->whereIn('status_order', ['pending', 'diproses'])
+            ->whereDoesntHave('transaksi');
 
-        // Riwayat transaksi hari ini oleh kasir ini
-        $riwayat = Transaksi::with(['order.meja', 'kasir'])
-            ->whereDate('tanggal', today())
-            ->where('user_kd', auth()->user()->kd_user)
-            ->orderByDesc('waktu')
-            ->paginate(10);
-
-        return view('kasir.transaksi', compact('orderSiap', 'riwayat'));
-    }
-
-    public function bayar(Request $request, string $kd_order)
-    {
-        $request->validate([
-            'jumlah_bayar' => 'required|integer|min:0',
-        ]);
-
-        $order = Order::with('detailOrders')->findOrFail($kd_order);
-
-        if ($order->transaksi) {
-            return back()->with('error', 'Order ini sudah dibayar.');
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('kd_order', 'like', "%{$s}%")
+                  ->orWhere('nama_user', 'like', "%{$s}%")
+                  ->orWhereHas('pelanggan', fn($p) => $p->where('name_pelanggan', 'like', "%{$s}%"));
+            });
         }
 
-        $transaksi = new Transaksi();
-        $result = $transaksi->prosesPembayaran($kd_order, auth()->user()->kd_user);
+        $orders = $query->orderByDesc('waktu')
+            ->paginate($request->input('per_page', 10))
+            ->withQueryString();
 
-        // Update status meja jadi tersedia
-        if ($order->meja) {
-            $order->meja->setStatus('tersedia');
-        }
-
-        $kembalian = $request->jumlah_bayar - $result->total_harga;
-
-        return redirect()
-            ->route('kasir.transaksi.struk', $result->kd_transaksi)
-            ->with('kembalian', $kembalian)
-            ->with('jumlah_bayar', $request->jumlah_bayar);
-    }
-
-    public function struk(string $kd_transaksi)
-    {
-        $transaksi = Transaksi::with(['order.detailOrders.menu', 'order.meja', 'kasir'])
-            ->findOrFail($kd_transaksi);
-
-        $kembalian = session('kembalian', 0);
-        $jumlahBayar = session('jumlah_bayar', $transaksi->total_harga);
-
-        return view('kasir.struk', compact('transaksi', 'kembalian', 'jumlahBayar'));
+        return view('kasir.transaksi', compact('orders'));
     }
 
     public function laporan(Request $request)
     {
-        $dari = $request->dari ?? now()->startOfMonth()->toDateString();
-        $sampai = $request->sampai ?? now()->toDateString();
+        $semuaTransaksi = Transaksi::where('user_kd', auth()->user()->kd_user)
+            ->orderByDesc('tanggal')->get();
 
-        $transaksis = Transaksi::with(['order.meja', 'kasir'])
-            ->whereDate('tanggal', '>=', $dari)
-            ->whereDate('tanggal', '<=', $sampai)
-            ->where('user_kd', auth()->user()->kd_user)
-            ->orderByDesc('tanggal')
-            ->paginate(10);
+        $query = Transaksi::with(['order.meja', 'kasir'])
+            ->where('user_kd', auth()->user()->kd_user);
 
-        $totalTransaksi = $transaksis->total();
-        $totalPendapatan = $transaksis->sum('total_harga');
+        if ($request->filled('kd_transaksi')) {
+            $query->where('kd_transaksi', $request->kd_transaksi);
+        }
 
-        return view('kasir.laporan', compact(
-            'transaksis',
-            'totalTransaksi',
-            'totalPendapatan',
-            'dari',
-            'sampai'
-        ));
+        $transaksis = $query->orderByDesc('tanggal')->get();
+
+        return view('kasir.laporan', compact('transaksis', 'semuaTransaksi'));
+    }
+
+    public function struk(string $kd_transaksi)
+    {
+        $transaksi   = Transaksi::with(['order.detailOrders.menu', 'order.meja', 'kasir'])
+            ->findOrFail($kd_transaksi);
+        $jumlahBayar = session('jumlah_bayar', $transaksi->total_harga);
+
+        return view('kasir.struk', compact('transaksi', 'jumlahBayar'));
     }
 }
