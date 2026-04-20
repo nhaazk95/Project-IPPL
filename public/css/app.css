@@ -27,6 +27,13 @@
     --transition:   all .2s ease;
     --shadow-sm:    0 2px 8px rgba(44,24,16,.06);
     --shadow-md:    0 6px 24px rgba(44,24,16,.13);
+
+    /* Pelanggan vars */
+    --orange-dark:  #a07d1a;
+    --radius-sm:    8px;
+    --radius-md:    14px;
+    --radius-lg:    20px;
+    --font-body:    'Plus Jakarta Sans', sans-serif;
 }
 
 /* ===== RESET ===== */
@@ -129,6 +136,16 @@ body {
     font-weight: 600;
 }
 .nav-icon { width: 20px; text-align: center; font-size: 14px; flex-shrink: 0; }
+
+/* Sub nav items (Laporan accordion) */
+.nav-sub {
+    padding-left: 36px !important;
+    font-size: 12.5px !important;
+    color: rgba(245,233,192,.5) !important;
+}
+.nav-sub:hover { color: rgba(245,233,192,.85) !important; }
+.nav-sub.active { color: var(--gold) !important; border-left-color: var(--gold); }
+.nav-parent { display: flex !important; }
 
 /* Sidebar footer */
 .sidebar-footer { padding: 14px 14px; border-top: 1px solid rgba(201,162,39,.12); }

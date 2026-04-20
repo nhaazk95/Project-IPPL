@@ -1,4 +1,4 @@
-@extends('layouts.guest')
+@extends('layouts.auth')
 @section('title', 'Konfirmasi Password — Dapur Nusantara')
 
 @section('content')

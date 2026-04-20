@@ -48,7 +48,9 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
-    Route::resource('level',    LevelController::class)->only(['index','update']);
+    Route::resource('level', LevelController::class)
+        ->only(['index','update','destroy']);
+
     Route::resource('menu',     MenuController::class);
     Route::resource('kategori', KategoriController::class);
     Route::resource('meja',     MejaController::class);
