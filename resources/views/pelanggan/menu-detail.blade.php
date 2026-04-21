@@ -1,4 +1,4 @@
-@extends('layouts.guest')
+@extends('layouts.pelanggan')
 
 @section('title', $menu->name_menu . ' — Dapur Nusantara')
 

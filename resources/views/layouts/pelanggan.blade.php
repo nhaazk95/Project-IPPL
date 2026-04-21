@@ -1,197 +1,275 @@
-{{-- resources/views/layouts/pelanggan.blade.php --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'DNUSA Resto')</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>@yield('title', 'Dapur Nusantara')</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <style>
-        :root { --pelanggan-topbar: 64px; --pelanggan-bottombar: 68px; }
-        body { background: #FAFAFA; padding-bottom: var(--pelanggan-bottombar); }
-
-        /* Top Nav Pelanggan */
-        .pelanggan-topbar {
-            position: fixed; top: 0; left: 0; right: 0;
-            height: var(--pelanggan-topbar);
-            background: var(--brown);
-            display: flex; align-items: center; padding: 0 20px;
-            gap: 14px; z-index: 100;
-            box-shadow: 0 2px 16px rgba(78,52,46,0.3);
+        /* ── Base ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --coklat:    #2c1810;
+            --emas:      #c9a227;
+            --emas-light:#d4b040;
+            --krem:      #faf5ee;
+            --krem-dark: #f0e8d8;
+            --teks-muted:#7a6552;
+            --orange:    #c9a227;
+            --brown:     #2c1810;
+            --cream-dark:#f0e8d8;
+            --bottombar: 68px;
         }
-        .pelanggan-topbar .logo {
-            font-family: var(--font-display);
-            color: #fff; font-size: 20px; flex: 1;
-        }
-        .pelanggan-topbar .logo span { color: var(--orange-soft); font-size: 13px; display: block; font-family: var(--font-body); font-weight: 400; }
-        .topbar-btn {
-            width: 40px; height: 40px;
-            background: rgba(255,255,255,0.1);
-            border: none; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            color: #fff; font-size: 16px; cursor: pointer;
-            text-decoration: none; position: relative;
-            transition: var(--transition);
-        }
-        .topbar-btn:hover { background: rgba(255,255,255,0.2); }
-        .cart-count {
-            position: absolute; top: -4px; right: -4px;
-            background: var(--orange); color: #fff;
-            width: 18px; height: 18px; border-radius: 50%;
-            font-size: 10px; font-weight: 700;
-            display: flex; align-items: center; justify-content: center;
+        html { font-size: 14px; -webkit-font-smoothing: antialiased; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #FAFAFA;
+            color: var(--coklat);
+            min-height: 100vh;
+            padding-bottom: var(--bottombar);
         }
 
-        /* Main content area */
-        .pelanggan-content {
-            margin-top: var(--pelanggan-topbar);
-            min-height: calc(100vh - var(--pelanggan-topbar) - var(--pelanggan-bottombar));
-        }
-
-        /* Bottom Nav */
-        .pelanggan-bottombar {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            height: var(--pelanggan-bottombar);
-            background: #fff;
-            display: flex; align-items: center;
-            border-top: 1px solid var(--cream-dark);
-            box-shadow: 0 -4px 20px rgba(78,52,46,0.08);
+        /* ── Topbar pelanggan ── */
+        .topbar {
+            background: var(--coklat);
+            height: 56px;
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            padding: 0 1rem;
+            position: sticky;
+            top: 0;
             z-index: 100;
+            box-shadow: 0 2px 12px rgba(44,24,16,.25);
+        }
+        .topbar-back {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.12);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 1.1rem;
+            text-decoration: none;
+            flex-shrink: 0;
+            transition: background .2s;
+        }
+        .topbar-back:hover { background: rgba(255,255,255,.22); }
+        .topbar-icon {
+            color: var(--emas);
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+        .topbar-title {
+            color: var(--emas);
+            font-weight: 700;
+            font-size: .95rem;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* ── Bottom Nav ── */
+        .pelanggan-bottombar {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: var(--bottombar);
+            background: var(--coklat);
+            display: flex;
+            align-items: center;
+            z-index: 100;
+            border-top: 2px solid rgba(201,162,39,.2);
         }
         .bottom-nav-item {
-            flex: 1; display: flex; flex-direction: column; align-items: center;
-            gap: 4px; padding: 8px 4px; text-decoration: none;
-            color: var(--brown-light); font-size: 11px; font-weight: 500;
-            transition: var(--transition); cursor: pointer;
-            border: none; background: none;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            padding: 8px 4px;
+            text-decoration: none;
+            color: rgba(255,255,255,.45);
+            font-size: .68rem;
+            font-weight: 600;
+            transition: color .2s;
+            cursor: pointer;
+            border: none;
+            background: none;
         }
-        .bottom-nav-item .icon { font-size: 20px; }
-        .bottom-nav-item.active, .bottom-nav-item:hover { color: var(--orange); }
-        .bottom-nav-item.active .icon { transform: scale(1.1); }
+        .bottom-nav-item .icon { font-size: 1.35rem; }
+        .bottom-nav-item.active { color: var(--emas); }
+        .bottom-nav-item:hover  { color: rgba(201,162,39,.8); }
 
-        /* Menu Card Pelanggan */
+        /* ── Fix btn-ke-menu ── */
+        .btn-ke-menu {
+            background: var(--emas) !important;
+            color: var(--coklat) !important;
+            border: none !important;
+            border-radius: 12px !important;
+            padding: .5rem 2rem !important;
+            font-size: .9rem !important;
+            font-weight: 700 !important;
+            cursor: pointer !important;
+            font-family: inherit !important;
+            text-decoration: none !important;
+            display: inline-block !important;
+            width: fit-content !important;
+        }
+
+        /* ── Toast ── */
+        #toast-container {
+            position: fixed;
+            bottom: calc(var(--bottombar) + 12px);
+            left: 50%; transform: translateX(-50%);
+            display: flex; flex-direction: column; gap: 8px;
+            z-index: 9999; width: 90%; max-width: 380px;
+        }
+        .toast {
+            padding: 10px 16px; border-radius: 10px;
+            font-size: .85rem; font-weight: 600;
+            background: #fff;
+            box-shadow: 0 4px 16px rgba(0,0,0,.15);
+            animation: slideUp .3s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        /* ── Menu Card ── */
         .menu-card {
             background: #fff;
-            border-radius: var(--radius-md);
+            border-radius: 14px;
             overflow: hidden;
-            box-shadow: var(--shadow-sm);
-            transition: var(--transition);
+            box-shadow: 0 2px 10px rgba(44,24,16,.07);
+            transition: all .2s;
             cursor: pointer;
         }
-        .menu-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .menu-card:hover { transform: translateY(-3px); box-shadow: 0 6px 24px rgba(44,24,16,.13); }
         .menu-card-img {
-            height: 150px; background: var(--cream-dark);
+            height: 150px; background: var(--krem-dark);
             overflow: hidden; position: relative;
         }
         .menu-card-img img { width: 100%; height: 100%; object-fit: cover; }
         .menu-card-body { padding: 14px; }
-        .menu-card-name { font-weight: 600; font-size: 14px; color: var(--brown); margin-bottom: 4px; }
-        .menu-card-desc { font-size: 12px; color: var(--text-light); margin-bottom: 10px; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+        .menu-card-name { font-weight: 700; font-size: 14px; color: var(--coklat); margin-bottom: 4px; }
+        .menu-card-desc { font-size: 12px; color: var(--teks-muted); margin-bottom: 10px; display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
         .menu-card-footer { display: flex; align-items: center; justify-content: space-between; }
-        .menu-price { font-weight: 700; font-size: 15px; color: var(--orange); }
+        .menu-price { font-weight: 800; font-size: 15px; color: var(--emas); }
         .btn-add {
             width: 32px; height: 32px; border-radius: 50%;
-            background: var(--orange); color: #fff; border: none;
+            background: var(--coklat); color: var(--emas); border: none;
             font-size: 18px; cursor: pointer; display: flex;
             align-items: center; justify-content: center;
-            transition: var(--transition);
+            transition: all .2s;
         }
-        .btn-add:hover { background: var(--orange-dark); transform: scale(1.1); }
+        .btn-add:hover { background: var(--emas); color: var(--coklat); transform: scale(1.1); }
 
-        /* Qty controls */
+        /* ── Qty controls ── */
         .qty-control { display: flex; align-items: center; gap: 8px; }
         .qty-btn {
             width: 30px; height: 30px; border-radius: 50%;
-            border: 2px solid var(--orange); background: #fff;
-            color: var(--orange); font-size: 16px; cursor: pointer;
+            border: 2px solid var(--emas); background: #fff;
+            color: var(--emas); font-size: 16px; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            transition: var(--transition);
+            transition: all .2s;
         }
-        .qty-btn:hover { background: var(--orange); color: #fff; }
-        .qty-num { font-weight: 700; font-size: 15px; min-width: 24px; text-align: center; }
+        .qty-btn:hover { background: var(--emas); color: #fff; }
+        .qty-num { font-weight: 700; font-size: 15px; min-width: 24px; text-align: center; color: var(--coklat); }
     </style>
     @stack('styles')
 </head>
 <body>
 
-{{-- Topbar --}}
-<div class="pelanggan-topbar">
-    <div class="logo">
-        ☕ DNUSA
-        <span>Meja {{ session('pelanggan.no_meja') ?? '-' }} · {{ session('pelanggan.name') ?? 'Pelanggan' }}</span>
-    </div>
-    <a href="{{ route('pelanggan.keranjang') }}" class="topbar-btn" title="Keranjang">
-        <i class="fa-solid fa-bag-shopping"></i>
-        @if(($cartCount = session('cart_count', 0)) > 0)
-            <span class="cart-count">{{ $cartCount }}</span>
-        @endif
-    </a>
-    <button class="topbar-btn" onclick="document.getElementById('logoutModal').classList.add('active')" title="Keluar">
-        <i class="fa-solid fa-right-from-bracket"></i>
-    </button>
-</div>
+@yield('content')
 
-<div class="pelanggan-content">
-    @yield('content')
-</div>
-
-{{-- Bottom Nav --}}
+{{-- Bottom Navigation --}}
+@php $cartCount = session('keranjang_count', 0); @endphp
 <nav class="pelanggan-bottombar">
-    <a href="{{ route('pelanggan.beranda') }}" class="bottom-nav-item {{ request()->routeIs('pelanggan.beranda') ? 'active' : '' }}">
-        <span class="icon"><i class="fa-solid fa-house"></i></span> Beranda
+    <a href="{{ route('pelanggan.beranda') }}"
+        class="bottom-nav-item {{ request()->routeIs('pelanggan.beranda') ? 'active' : '' }}">
+        <span class="icon"><i class="bi bi-house-fill"></i></span>
+        Beranda
     </a>
-    <a href="{{ route('pelanggan.menu') }}" class="bottom-nav-item {{ request()->routeIs('pelanggan.menu') ? 'active' : '' }}">
-        <span class="icon"><i class="fa-solid fa-utensils"></i></span> Menu
+    <a href="{{ route('pelanggan.menu') }}"
+        class="bottom-nav-item {{ request()->routeIs('pelanggan.menu*') ? 'active' : '' }}">
+        <span class="icon"><i class="bi bi-egg-fried"></i></span>
+        Menu
     </a>
-    <a href="{{ route('pelanggan.keranjang') }}" class="bottom-nav-item {{ request()->routeIs('pelanggan.keranjang') ? 'active' : '' }}" style="position:relative;">
-        <span class="icon"><i class="fa-solid fa-bag-shopping"></i></span> Keranjang
+    <a href="{{ route('pelanggan.keranjang') }}"
+        class="bottom-nav-item {{ request()->routeIs('pelanggan.keranjang') ? 'active' : '' }}"
+        style="position:relative;">
+        <span class="icon"><i class="bi bi-cart3"></i></span>
+        Keranjang
         @if($cartCount > 0)
-            <span style="position:absolute;top:4px;left:50%;margin-left:4px;background:var(--orange);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 6px;">{{ $cartCount }}</span>
+            <span style="position:absolute;top:4px;left:50%;margin-left:6px;
+                background:#e74c3c;color:#fff;border-radius:10px;
+                font-size:.6rem;font-weight:700;padding:1px 5px;min-width:16px;text-align:center;">
+                {{ $cartCount }}
+            </span>
         @endif
     </a>
-    <a href="{{ route('pelanggan.pesanan') }}" class="bottom-nav-item {{ request()->routeIs('pelanggan.pesanan') ? 'active' : '' }}">
-        <span class="icon"><i class="fa-solid fa-clipboard-list"></i></span> Pesanan
+    <a href="#" class="bottom-nav-item"
+        onclick="document.getElementById('logoutModal').classList.add('show');return false;">
+        <span class="icon"><i class="bi bi-box-arrow-right"></i></span>
+        Keluar
     </a>
 </nav>
 
 {{-- Logout Modal --}}
-<div class="modal-backdrop" id="logoutModal">
-    <div class="modal-box" style="max-width:360px;">
-        <div class="modal-header">
-            <span class="modal-title">Keluar Sesi?</span>
-            <button class="modal-close" onclick="document.getElementById('logoutModal').classList.remove('active')">✕</button>
+<div id="logoutModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;
+    align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:20px;padding:2rem 1.5rem;max-width:320px;width:90%;text-align:center;margin:auto;">
+        <div style="width:72px;height:72px;border-radius:50%;border:3px solid var(--emas);
+            display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;
+            font-size:1.8rem;color:var(--emas);">
+            <i class="bi bi-exclamation"></i>
         </div>
-        <div class="modal-body" style="text-align:center;padding:28px;">
-            <div style="font-size:40px;margin-bottom:12px;">👋</div>
-            <p style="color:var(--text-light);">Terima kasih telah mengunjungi DNUSA Resto!</p>
-        </div>
-        <div class="modal-footer" style="justify-content:center;gap:14px;">
-            <button class="btn-secondary" onclick="document.getElementById('logoutModal').classList.remove('active')">Batal</button>
+        <h5 style="font-weight:800;color:var(--coklat);margin-bottom:.5rem;">Keluar?</h5>
+        <p style="color:var(--teks-muted);font-size:.875rem;margin-bottom:1.5rem;">
+            Yakin ingin mengakhiri sesi?
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;">
             <form method="POST" action="{{ route('pelanggan.logout') }}">
                 @csrf
-                <button type="submit" class="btn-primary" style="background:var(--danger);">Keluar</button>
+                <button type="submit" style="background:var(--coklat);color:var(--emas);
+                    border:none;border-radius:10px;padding:.65rem 2rem;font-weight:700;
+                    font-size:.9rem;cursor:pointer;">OK</button>
             </form>
+            <button onclick="document.getElementById('logoutModal').classList.remove('show')"
+                style="background:var(--krem-dark);color:var(--coklat);border:none;
+                border-radius:10px;padding:.65rem 2rem;font-weight:700;font-size:.9rem;cursor:pointer;">
+                NO
+            </button>
         </div>
     </div>
 </div>
 
 <div id="toast-container"></div>
+
 <script>
+const lm = document.getElementById('logoutModal');
+if (lm) {
+    lm.addEventListener('click', e => { if (e.target === lm) lm.classList.remove('show'); });
+}
+const style = document.createElement('style');
+style.textContent = '#logoutModal.show { display:flex !important; }';
+document.head.appendChild(style);
+
 window.showToast = function(msg, type='success') {
     const tc = document.getElementById('toast-container');
     const t = document.createElement('div');
-    t.className = 'toast ' + type;
+    t.className = 'toast';
+    t.style.borderLeft = '4px solid ' + (type==='success'?'#27ae60':'#e74c3c');
     t.innerHTML = (type==='success'?'✅':'❌') + ' ' + msg;
     tc.appendChild(t);
     setTimeout(() => t.remove(), 3000);
 };
-document.querySelectorAll('.modal-backdrop').forEach(b =>
-    b.addEventListener('click', e => { if (e.target === b) b.classList.remove('active'); })
-);
 </script>
 @stack('scripts')
 </body>
-</html>
+</html> 

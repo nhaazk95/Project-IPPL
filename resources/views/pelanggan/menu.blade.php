@@ -1,4 +1,4 @@
-@extends('layouts.guest')
+@extends('layouts.pelanggan')
 
 @section('title', 'Menu — Dapur Nusantara')
 
