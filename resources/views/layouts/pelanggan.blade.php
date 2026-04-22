@@ -109,15 +109,21 @@
             background: var(--emas) !important;
             color: var(--coklat) !important;
             border: none !important;
-            border-radius: 12px !important;
-            padding: .5rem 2rem !important;
-            font-size: .9rem !important;
+            border-radius: 50px !important;
+            padding: .6rem 1.5rem !important;
+            font-size: .85rem !important;
             font-weight: 700 !important;
             cursor: pointer !important;
             font-family: inherit !important;
             text-decoration: none !important;
-            display: inline-block !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: .4rem !important;
             width: fit-content !important;
+            max-width: fit-content !important;
+            white-space: nowrap !important;
+            line-height: 1 !important;
         }
 
         /* ── Toast ── */
@@ -272,4 +278,4 @@ window.showToast = function(msg, type='success') {
 </script>
 @stack('scripts')
 </body>
-</html> 
+</html>

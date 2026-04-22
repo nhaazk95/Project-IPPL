@@ -20,7 +20,6 @@
             display: flex;
             flex-direction: column;
             min-height: calc(100vh - 56px - 68px);
-            /* topbar + bottomnav */
             padding: 1rem 1rem 0;
         }
 
@@ -193,7 +192,6 @@
             background: var(--coklat);
             padding: 1rem 1.25rem 1.1rem;
             margin: auto -1rem -1rem;
-            /* pull ke tepi */
         }
 
         .footer-label {
@@ -231,7 +229,7 @@
             background: #d4b040;
         }
 
-        /* ── Empty ── */
+        /* ── Empty state ── */
         .empty-keranjang {
             flex: 1;
             display: flex;
@@ -240,6 +238,7 @@
             justify-content: center;
             padding: 3rem 1rem;
             text-align: center;
+            width: 100%;
         }
 
         .empty-keranjang i {
@@ -253,19 +252,26 @@
             margin-bottom: 1rem;
         }
 
+        /* ── Tombol Lihat Menu ── */
         .btn-ke-menu {
-            background: var(--emas);
-            color: var(--coklat);
-            border: none;
-            border-radius: 12px;
-            padding: .5rem 2rem;
-            font-size: .9rem;
-            font-weight: 700;
-            cursor: pointer;
-            font-family: inherit;
-            text-decoration: none;
-            display: inline-block;
-            width: fit-content;
+            background: var(--emas) !important;
+            color: var(--coklat) !important;
+            border: none !important;
+            border-radius: 50px !important;
+            padding: .6rem 1.5rem !important;
+            font-size: .85rem !important;
+            font-weight: 700 !important;
+            cursor: pointer !important;
+            font-family: inherit !important;
+            text-decoration: none !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: .4rem !important;
+            width: fit-content !important;
+            max-width: fit-content !important;
+            white-space: nowrap !important;
+            line-height: 1 !important;
         }
     </style>
 @endpush
@@ -283,14 +289,12 @@
 
     {{-- Flash --}}
     @if(session('success'))
-        <div
-            style="background:#d4edda;color:#155724;font-size:.82rem;padding:.6rem 1rem;border-left:4px solid #27ae60;margin:.5rem 1rem 0;">
+        <div style="background:#d4edda;color:#155724;font-size:.82rem;padding:.6rem 1rem;border-left:4px solid #27ae60;margin:.5rem 1rem 0;">
             <i class="bi bi-check-circle me-1"></i>{{ session('success') }}
         </div>
     @endif
     @if(session('error'))
-        <div
-            style="background:#f8d7da;color:#721c24;font-size:.82rem;padding:.6rem 1rem;border-left:4px solid #e74c3c;margin:.5rem 1rem 0;">
+        <div style="background:#f8d7da;color:#721c24;font-size:.82rem;padding:.6rem 1rem;border-left:4px solid #e74c3c;margin:.5rem 1rem 0;">
             <i class="bi bi-exclamation-circle me-1"></i>{{ session('error') }}
         </div>
     @endif
@@ -330,8 +334,7 @@
                         {{-- Qty stepper --}}
                         <div class="item-qty-row">
                             {{-- Kurang --}}
-                            <form action="{{ route('pelanggan.keranjang.update', $item->kd_detail) }}" method="POST"
-                                style="margin:0;">
+                            <form action="{{ route('pelanggan.keranjang.update', $item->kd_detail) }}" method="POST" style="margin:0;">
                                 @csrf @method('PUT')
                                 <input type="hidden" name="jumlah" value="{{ max(1, $item->total - 1) }}">
                                 <button type="submit" class="qty-btn-circle">−</button>
@@ -340,8 +343,7 @@
                             <span class="qty-num">{{ $item->total }}</span>
 
                             {{-- Tambah --}}
-                            <form action="{{ route('pelanggan.keranjang.update', $item->kd_detail) }}" method="POST"
-                                style="margin:0;">
+                            <form action="{{ route('pelanggan.keranjang.update', $item->kd_detail) }}" method="POST" style="margin:0;">
                                 @csrf @method('PUT')
                                 <input type="hidden" name="jumlah" value="{{ $item->total + 1 }}">
                                 <button type="submit" class="qty-btn-circle">+</button>
