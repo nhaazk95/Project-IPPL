@@ -34,19 +34,19 @@ class OrderController extends Controller
     }
 
     /**
-     * FIX: method ini didaftarkan di route tapi tidak ada.
-     * Proses pembayaran oleh kasir — buat Transaksi & update status order.
+     * Proses pembayaran oleh kasir — return JSON untuk modal struk
      */
     public function prosesBayar(Request $request, string $kd_order)
     {
         $request->validate([
-            'metode' => 'required|in:cash,qris',
+            'metode'       => 'nullable|in:cash,qris',
+            'jumlah_bayar' => 'nullable|integer|min:0',
         ]);
 
-        $order = Order::with('detailOrders')->findOrFail($kd_order);
+        $order = Order::with('detailOrders.menu', 'meja')->findOrFail($kd_order);
 
         if ($order->status_order === 'selesai') {
-            return back()->with('error', 'Order ini sudah dibayar.');
+            return response()->json(['error' => 'Order ini sudah dibayar.'], 422);
         }
 
         $total = $order->detailOrders->sum('sub_total');
@@ -60,7 +60,6 @@ class OrderController extends Controller
             'waktu'        => now(),
         ]);
 
-        // Update semua detail order → link ke transaksi & status selesai
         $order->detailOrders()->update([
             'transaksi_kd'  => $transaksi->kd_transaksi,
             'status_detail' => 'selesai',
@@ -68,8 +67,28 @@ class OrderController extends Controller
 
         $order->updateStatus('selesai');
 
-        return redirect()->route('kasir.struk', $transaksi->kd_transaksi)
-            ->with('success', 'Pembayaran berhasil diproses!');
+        if ($order->meja) {
+            $order->meja->update(['status' => 'tersedia']);
+        }
+
+        $jumlahBayar = $request->input('jumlah_bayar', $total);
+
+        return response()->json([
+            'kd_transaksi' => $transaksi->kd_transaksi,
+            'tanggal'      => now()->format('d/m/Y'),
+            'waktu'        => now()->format('H:i'),
+            'kasir'        => Auth::user()->name,
+            'no_meja'      => $order->no_meja,
+            'nama_user'    => $order->nama_user,
+            'total_harga'  => $total,
+            'jumlah_bayar' => $jumlahBayar,
+            'kembalian'    => max(0, $jumlahBayar - $total),
+            'items'        => $order->detailOrders->map(fn($d) => [
+                'nama'      => $d->menu->name_menu ?? '-',
+                'qty'       => $d->total,
+                'sub_total' => $d->sub_total,
+            ]),
+        ]);
     }
 
     public function proses(string $kd_order)

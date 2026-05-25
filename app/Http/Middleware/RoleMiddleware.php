@@ -8,10 +8,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleMiddleware
 {
-    /**
-     * Handle an incoming request.
-     * Usage: middleware('role:admin') or middleware('role:kasir')
-     */
     public function handle(Request $request, Closure $next, string $role): Response
     {
         if (!auth()->check()) {

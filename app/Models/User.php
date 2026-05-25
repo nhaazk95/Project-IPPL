@@ -18,12 +18,14 @@ class User extends Authenticatable
     protected $keyType = 'string';
 
     protected $fillable = [
-        'kd_user',
-        'name',
-        'email',
-        'username',
-        'password',
-        'level_id',    // ← WAJIB ada, sebelumnya tidak ada sehingga level tidak tersimpan
+    'kd_user',
+    'name',
+    'email',
+    'username',
+    'password',
+    'level_id',
+    'foto',
+    'no_hp',
     ];
 
     protected $hidden = [
@@ -34,8 +36,6 @@ class User extends Authenticatable
     protected $casts = [
         'level_id' => 'integer',
     ];
-
-    // ==================== RELATIONSHIPS ====================
 
     public function level()
     {
@@ -91,23 +91,15 @@ class User extends Authenticatable
         $this->save();
     }
 
-    // ==================== HELPER ====================
-
-    /**
-     * Cek apakah user adalah Admin
-     * Pakai nama level (case-insensitive), bukan hardcode ID
-     * karena ID level bisa berbeda tiap instalasi
-     */
     public function isAdmin(): bool
     {
         return strtolower($this->level->nama_level ?? '') === 'admin';
     }
 
-    /**
-     * Cek apakah user adalah Kasir
-     */
     public function isKasir(): bool
     {
         return strtolower($this->level->nama_level ?? '') === 'kasir';
     }
+
+    
 }

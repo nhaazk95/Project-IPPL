@@ -242,27 +242,102 @@
 
 {{-- PROFIL MODAL --}}
 <div class="modal-backdrop" id="profileModal">
-    <div class="modal-box" style="max-width:420px;">
+    <div class="modal-box" style="max-width:460px;">
         <div class="modal-header">
             <span class="modal-title"><i class="fa-solid fa-user-circle" style="margin-right:8px;"></i>Profil Saya</span>
             <button class="modal-close" onclick="document.getElementById('profileModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="modal-body">
-            <div style="text-align:center;margin-bottom:22px;">
-                <div style="width:80px;height:80px;border-radius:50%;background:var(--gold);color:var(--brown);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;margin:0 auto 12px;border:3px solid var(--brown);">
-                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+
+        <form id="formProfil" enctype="multipart/form-data">
+            @csrf
+            <div class="modal-body" style="padding-top:20px;">
+
+                {{-- Avatar --}}
+                <div style="text-align:center;margin-bottom:20px;">
+                    <div style="position:relative;display:inline-block;">
+                        <div id="avatarPreview" style="width:88px;height:88px;border-radius:50%;background:var(--gold);color:var(--brown);
+                            display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;
+                            margin:0 auto;border:3px solid var(--brown);overflow:hidden;">
+                            @if(auth()->user()->foto)
+                                <img src="{{ Storage::url(auth()->user()->foto) }}" style="width:100%;height:100%;object-fit:cover;">
+                            @else
+                                {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                            @endif
+                        </div>
+                        <label for="inputFoto" style="position:absolute;bottom:0;right:0;
+                            width:26px;height:26px;border-radius:50%;background:var(--brown);
+                            color:var(--gold);display:flex;align-items:center;justify-content:center;
+                            cursor:pointer;font-size:12px;border:2px solid #fff;">
+                            <i class="fa-solid fa-camera"></i>
+                        </label>
+                        <input type="file" id="inputFoto" name="foto" accept="image/*"
+                            style="display:none;" onchange="previewFoto(this)">
+                    </div>
+                    <div style="font-weight:700;font-size:16px;color:var(--text-dark);margin-top:10px;">
+                        {{ auth()->user()->name }}
+                    </div>
+                    <div style="font-size:12px;color:var(--text-light);">
+                        {{ auth()->user()->level->nama_level ?? 'User' }}
+                    </div>
                 </div>
-                <div style="font-weight:700;font-size:17px;color:var(--text-dark);">{{ auth()->user()->name }}</div>
-                <div style="font-size:12px;color:var(--text-light);margin-top:3px;">{{ auth()->user()->level->nama_level ?? 'User' }}</div>
+
+                {{-- Fields --}}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="form-group" style="margin:0;">
+                        <label class="form-label">Nama Lengkap</label>
+                        <input type="text" name="name" class="form-control"
+                            value="{{ auth()->user()->name }}" required>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" class="form-control"
+                            value="{{ auth()->user()->username }}" required>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control"
+                            value="{{ auth()->user()->email }}" required>
+                    </div>
+                    <div class="form-group" style="margin:0;">
+                        <label class="form-label">No. HP</label>
+                        <input type="text" name="no_hp" class="form-control"
+                            value="{{ auth()->user()->no_hp }}" placeholder="08xx...">
+                    </div>
+                </div>
+
+                <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--cream-dark);">
+                    <p style="font-size:11.5px;color:var(--text-light);margin-bottom:10px;">
+                        <i class="fa-solid fa-lock" style="margin-right:4px;"></i>
+                        Ganti Password — kosongkan jika tidak ingin mengubah
+                    </p>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div class="form-group" style="margin:0;">
+                            <label class="form-label">Password Baru</label>
+                            <input type="password" name="password" class="form-control"
+                                placeholder="Min. 6 karakter">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label class="form-label">Konfirmasi Password</label>
+                            <input type="password" name="password_confirmation" class="form-control"
+                                placeholder="Ulangi password">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="profilAlert" style="display:none;margin-top:12px;padding:10px 14px;
+                    border-radius:8px;font-size:13px;font-weight:600;"></div>
             </div>
-            <div class="profil-row"><span class="profil-label"><i class="fa-solid fa-id-badge"></i> Kode User</span><span class="profil-val" style="font-family:monospace;">{{ auth()->user()->kd_user }}</span></div>
-            <div class="profil-row"><span class="profil-label"><i class="fa-solid fa-user"></i> Username</span><span class="profil-val">{{ auth()->user()->username }}</span></div>
-            <div class="profil-row"><span class="profil-label"><i class="fa-solid fa-envelope"></i> Email</span><span class="profil-val">{{ auth()->user()->email }}</span></div>
-            <div class="profil-row" style="border:none;"><span class="profil-label"><i class="fa-solid fa-shield-halved"></i> Level</span><span class="profil-val"><span class="badge-level">{{ auth()->user()->level->nama_level ?? '-' }}</span></span></div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn-brown" onclick="document.getElementById('profileModal').classList.remove('active')">Tutup</button>
-        </div>
+
+            <div class="modal-footer" style="gap:10px;">
+                <button type="button" class="btn-secondary"
+                    onclick="document.getElementById('profileModal').classList.remove('active')">
+                    Batal
+                </button>
+                <button type="button" class="btn-brown" onclick="simpanProfil()" id="btnSimpanProfil">
+                    <i class="fa-solid fa-floppy-disk"></i> Simpan
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -350,6 +425,53 @@ function closeTopbarMenu() {
 function showProfileModal() {
     closeTopbarMenu();
     document.getElementById('profileModal').classList.add('active');
+}
+
+function previewFoto(input) {
+    if (!input.files || !input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('avatarPreview').innerHTML =
+            `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+function simpanProfil() {
+    const btn = document.getElementById('btnSimpanProfil');
+    const alert = document.getElementById('profilAlert');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+    alert.style.display = 'none';
+
+    const form = document.getElementById('formProfil');
+    const formData = new FormData(form);
+
+    fetch('{{ route("profil.update") }}', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
+        body: formData,
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert.style.cssText = 'display:block;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;background:rgba(26,122,74,.1);border:1px solid var(--success);color:var(--success);';
+            alert.textContent = '✓ ' + data.message;
+            setTimeout(() => window.location.reload(), 1200);
+        } else {
+            const errors = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Terjadi kesalahan.');
+            alert.style.cssText = 'display:block;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;background:#fde8e8;border:1px solid var(--danger);color:var(--danger);';
+            alert.textContent = '✗ ' + errors;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan';
+        }
+    })
+    .catch(() => {
+        alert.style.cssText = 'display:block;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;background:#fde8e8;border:1px solid var(--danger);color:var(--danger);';
+        alert.textContent = '✗ Terjadi kesalahan. Coba lagi.';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan';
+    });
 }
 
 // Close on outside click

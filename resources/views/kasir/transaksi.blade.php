@@ -20,7 +20,6 @@
                 <span style="font-size:11px;color:rgba(245,233,192,.5);">{{ $orders->total() }} order aktif</span>
             </div>
 
-            {{-- Show & Search --}}
             <div style="padding:12px 16px;border-bottom:1px solid var(--cream-dark);
                 display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
                 <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-light);">
@@ -115,7 +114,6 @@
                 </div>
             </div>
 
-            {{-- Pagination --}}
             <div style="padding:10px 16px;border-top:1px solid var(--cream-dark);font-size:12px;
                 color:var(--text-light);display:flex;justify-content:space-between;align-items:center;">
                 <span>Showing {{ $orders->firstItem() ?? 0 }} to {{ $orders->lastItem() ?? 0 }} of {{ $orders->total() }} entries</span>
@@ -143,64 +141,90 @@
                 <span class="card-title"><i class="fa-solid fa-cash-register" style="margin-right:8px;"></i>Transaksi Pembayaran</span>
             </div>
             <div class="card-body">
-                <form method="POST" id="formBayar" action="">
-                    @csrf
+                <div class="form-group">
+                    <label class="form-label">Kode Order</label>
+                    <input type="text" id="fKdOrder" class="form-control" readonly
+                        placeholder="Pilih order dari tabel"
+                        style="background:var(--cream);">
+                </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Kode Order</label>
-                        <input type="text" id="fKdOrder" class="form-control" readonly
-                            placeholder="Pilih order dari tabel"
-                            style="background:var(--cream);">
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Pelanggan</label>
+                    <input type="text" id="fNama" class="form-control" readonly
+                        placeholder="—"
+                        style="background:var(--cream);">
+                </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Pelanggan</label>
-                        <input type="text" id="fNama" class="form-control" readonly
-                            placeholder="—"
-                            style="background:var(--cream);">
+                <div class="form-group">
+                    <label class="form-label">Total Harga</label>
+                    <div id="fTotal" style="background:var(--cream);border:2px solid var(--gold);
+                        border-radius:10px;padding:11px 14px;font-size:20px;font-weight:800;
+                        color:var(--gold-dark);text-align:center;">
+                        Rp 0
                     </div>
+                </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Total Harga</label>
-                        <div id="fTotal" style="background:var(--cream);border:2px solid var(--gold);
-                            border-radius:10px;padding:11px 14px;font-size:20px;font-weight:800;
-                            color:var(--gold-dark);text-align:center;">
-                            Rp 0
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Bayar</label>
+                    <input type="number" id="fBayar" class="form-control"
+                        placeholder="Masukkan jumlah uang" min="0"
+                        oninput="hitungKembalian()" style="font-size:15px;">
+                </div>
 
-                    <div class="form-group">
-                        <label class="form-label">Bayar</label>
-                        <input type="number" id="fBayar" name="jumlah_bayar" class="form-control"
-                            placeholder="Masukkan jumlah uang" min="0"
-                            oninput="hitungKembalian()" style="font-size:15px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Kembalian</label>
+                    <div id="fKembalian" style="background:var(--cream);border:1.5px solid var(--cream-dark);
+                        border-radius:10px;padding:11px 14px;font-size:16px;font-weight:700;
+                        color:var(--text-light);text-align:center;transition:all .2s;">
+                        —
                     </div>
+                </div>
 
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">Kembalian</label>
-                        <div id="fKembalian" style="background:var(--cream);border:1.5px solid var(--cream-dark);
-                            border-radius:10px;padding:11px 14px;font-size:16px;font-weight:700;
-                            color:var(--text-light);text-align:center;transition:all .2s;">
-                            —
-                        </div>
-                    </div>
-
-                    <div style="display:flex;gap:10px;margin-top:16px;">
-                        <button type="button" class="btn-secondary"
-                            style="flex:1;justify-content:center;padding:11px;"
-                            onclick="resetForm()">
-                            <i class="fa-solid fa-rotate-left"></i> Reset
-                        </button>
-                        <button type="submit" id="btnSimpan" class="btn-gold" disabled
-                            style="flex:1;justify-content:center;padding:11px;opacity:.5;cursor:not-allowed;">
-                            <i class="fa-solid fa-floppy-disk"></i> Simpan
-                        </button>
-                    </div>
-                </form>
+                <div style="display:flex;gap:10px;margin-top:16px;">
+                    <button type="button" class="btn-secondary"
+                        style="flex:1;justify-content:center;padding:11px;"
+                        onclick="resetForm()">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                    <button type="button" id="btnBayar" class="btn-gold" disabled
+                        style="flex:1;justify-content:center;padding:11px;opacity:.5;cursor:not-allowed;"
+                        onclick="prosesBayar()">
+                        <i class="fa-solid fa-money-bill-wave"></i> Bayar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
+</div>
+
+{{-- ===== MODAL STRUK ===== --}}
+<div id="modalStruk" style="display:none;position:fixed;inset:0;z-index:9999;
+    background:rgba(0,0,0,.6);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;padding:16px;">
+    <div style="background:#fff;width:100%;max-width:380px;border-radius:16px;
+        overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.4);
+        position:relative;max-height:90vh;overflow-y:auto;">
+
+        {{-- Tombol tutup --}}
+        <button onclick="tutupStruk()" style="position:absolute;top:12px;right:12px;
+            background:rgba(0,0,0,.08);border:none;border-radius:50%;
+            width:32px;height:32px;font-size:16px;cursor:pointer;
+            display:flex;align-items:center;justify-content:center;z-index:10;">✕</button>
+
+        {{-- Isi struk --}}
+        <div id="strukContent" style="padding:24px 20px 0;">
+            {{-- diisi JS --}}
+        </div>
+
+        <div style="padding:16px 20px 20px;text-align:center;">
+            <button onclick="cetakStruk()" style="padding:12px 32px;
+                background:#2c1810;color:#c9a227;border:none;border-radius:10px;
+                font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+                🖨️ Cetak Struk
+            </button>
+        </div>
+    </div>
 </div>
 
 @endsection
@@ -211,6 +235,11 @@
 .order-row:hover { background:var(--gold-pale) !important; }
 .order-row.selected { background:rgba(201,162,39,.08) !important; outline:2px solid var(--gold); }
 @media(max-width:900px) { .trx-layout { grid-template-columns:1fr; } }
+@media print {
+    body * { visibility:hidden; }
+    #printArea, #printArea * { visibility:visible; }
+    #printArea { position:fixed;inset:0;display:flex;align-items:center;justify-content:center; }
+}
 </style>
 @endpush
 
@@ -218,14 +247,13 @@
 <script>
 let selectedOrderKd = '';
 let selectedTotal   = 0;
+let strukData       = null;
 
 function pilihOrder(kd, meja, nama, total) {
     selectedOrderKd = kd;
     selectedTotal   = parseInt(total) || 0;
 
-    // Highlight baris terpilih
     document.querySelectorAll('.order-row').forEach(r => r.classList.remove('selected'));
-    // Cari baris yang diklik
     document.querySelectorAll('.order-row').forEach(r => {
         if (r.textContent.includes(kd)) r.classList.add('selected');
     });
@@ -234,22 +262,15 @@ function pilihOrder(kd, meja, nama, total) {
     document.getElementById('fNama').value    = nama;
     document.getElementById('fTotal').textContent = 'Rp ' + selectedTotal.toLocaleString('id-ID');
 
-    // Set action ke kasir prosesBayar
-    document.getElementById('formBayar').action = '/kasir/order/' + kd + '/bayar';
-
-    // Aktifkan tombol simpan
-    const btn = document.getElementById('btnSimpan');
+    const btn = document.getElementById('btnBayar');
     btn.disabled = false;
     btn.style.opacity = '1';
     btn.style.cursor = 'pointer';
 
-    // Reset bayar & kembalian
     document.getElementById('fBayar').value = '';
     resetKembalian();
 
-    // Scroll ke form di mobile
-    document.getElementById('formBayar').closest('.trx-right')
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelector('.trx-right')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function hitungKembalian() {
@@ -285,8 +306,170 @@ function resetForm() {
     document.getElementById('fBayar').value   = '';
     document.getElementById('fTotal').textContent = 'Rp 0';
     resetKembalian();
-    const btn = document.getElementById('btnSimpan');
+    const btn = document.getElementById('btnBayar');
     btn.disabled = true; btn.style.opacity='.5'; btn.style.cursor='not-allowed';
+}
+
+(function () {
+    const params = new URLSearchParams(window.location.search);
+    const pilih  = params.get('pilih');
+    if (!pilih) return;
+
+    // Cari baris order yang cocok dan klik
+    document.querySelectorAll('.order-row').forEach(row => {
+        if (row.textContent.includes(pilih)) {
+            row.click();
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    });
+})();
+
+function fmt(n) {
+    return 'Rp ' + parseInt(n).toLocaleString('id-ID');
+}
+
+function prosesBayar() {
+    if (!selectedOrderKd) return;
+    const jumlahBayar = parseInt(document.getElementById('fBayar').value) || 0;
+
+    const btn = document.getElementById('btnBayar');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
+
+    fetch('/kasir/order/' + selectedOrderKd + '/bayar', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({ jumlah_bayar: jumlahBayar }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-money-bill-wave"></i> Bayar';
+            return;
+        }
+        strukData = data;
+        tampilkanStruk(data);
+        resetForm();
+    })
+    .catch(() => {
+        alert('Terjadi kesalahan. Coba lagi.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-money-bill-wave"></i> Bayar';
+    });
+}
+
+function tampilkanStruk(d) {
+    let items = '';
+    d.items.forEach(i => {
+        items += `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;
+            padding:7px 0;border-bottom:1px solid #f5ece0;">
+            <div style="font-size:13px;font-weight:600;color:#2c1810;flex:1;">${i.nama}</div>
+            <div style="font-size:12px;color:#7a6552;margin:0 10px;">x${i.qty}</div>
+            <div style="font-size:13px;font-weight:700;color:#2c1810;">${fmt(i.sub_total)}</div>
+        </div>`;
+    });
+
+    let bayarBox = '';
+    if (d.jumlah_bayar > 0) {
+        bayarBox = `
+        <div style="background:#faf5ee;border-radius:10px;padding:12px 14px;margin-top:14px;border:1.5px solid #e0d5c5;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#5a3e2b;padding:2px 0;font-weight:500;">
+                <span>Dibayar</span><span>${fmt(d.jumlah_bayar)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:2px 0;font-weight:800;color:#1a7a4a;">
+                <span>Kembalian</span><span>${fmt(d.kembalian)}</span>
+            </div>
+        </div>`;
+    }
+
+    let pelanggan = d.nama_user
+        ? `<div style="display:flex;justify-content:space-between;font-size:12.5px;color:#7a6552;padding:3px 0;">
+               <span>Pelanggan</span><strong style="color:#2c1810;">${d.nama_user}</strong>
+           </div>` : '';
+
+    document.getElementById('strukContent').innerHTML = `
+        <div style="font-size:12.5px;color:#7a6552;">
+            <div style="display:flex;justify-content:space-between;padding:3px 0;">
+                <span>No. Transaksi</span><strong style="color:#2c1810;font-family:monospace;">${d.kd_transaksi}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:3px 0;">
+                <span>Tanggal</span><strong style="color:#2c1810;">${d.tanggal}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:3px 0;">
+                <span>Waktu</span><strong style="color:#2c1810;">${d.waktu}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:3px 0;">
+                <span>Kasir</span><strong style="color:#2c1810;">${d.kasir}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:3px 0;">
+                <span>No. Meja</span><strong style="color:#2c1810;">Meja ${d.no_meja}</strong>
+            </div>
+            ${pelanggan}
+        </div>
+
+        <hr style="border:none;border-top:1.5px dashed #e0d5c5;margin:14px 0;">
+
+        ${items}
+
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#7a6552;padding:3px 0;margin-top:10px;">
+            <span>Subtotal</span><span>${fmt(d.total_harga)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#7a6552;padding:3px 0;">
+            <span>Pajak</span><span>Rp 0</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;
+            padding:12px 0 0;margin-top:10px;border-top:2.5px solid #2c1810;">
+            <span style="font-size:14px;font-weight:800;color:#2c1810;">TOTAL</span>
+            <span style="font-size:20px;font-weight:800;color:#c9a227;">${fmt(d.total_harga)}</span>
+        </div>
+
+        ${bayarBox}
+
+        <div style="background:#faf5ee;border-top:1.5px dashed #e0d5c5;
+            margin:16px -20px 0;padding:16px 20px;text-align:center;">
+            <div style="font-size:14px;font-weight:700;color:#2c1810;margin-bottom:4px;">
+                Terima kasih sudah berkunjung! 🙏
+            </div>
+            <p style="font-size:11.5px;color:#7a6552;line-height:1.8;">
+                Semoga harimu menyenangkan<br>Sampai jumpa kembali di Dapur Nusantara
+            </p>
+            <div style="font-family:monospace;font-size:10px;color:#b0a090;margin-top:10px;">
+                ${d.kd_transaksi}
+            </div>
+        </div>
+    `;
+
+    const modal = document.getElementById('modalStruk');
+    modal.style.display = 'flex';
+}
+
+function tutupStruk() {
+    document.getElementById('modalStruk').style.display = 'none';
+    // Reload halaman agar order yang sudah dibayar hilang dari list
+    window.location.reload();
+}
+
+function cetakStruk() {
+    const content = document.getElementById('strukContent').innerHTML;
+    const printWin = window.open('', '_blank', 'width=420,height=700');
+    printWin.document.write(`
+        <html><head><title>Struk</title>
+        <style>
+            * { margin:0;padding:0;box-sizing:border-box; }
+            body { font-family:'Plus Jakarta Sans',sans-serif;padding:20px; }
+        </style>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+        </head><body>${content}</body></html>
+    `);
+    printWin.document.close();
+    printWin.onload = () => { printWin.print(); };
 }
 </script>
 @endpush

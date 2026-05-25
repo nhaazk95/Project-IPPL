@@ -7,9 +7,6 @@ use Illuminate\Support\Facades\Storage;
 
 class Kasir extends User
 {
-    /**
-     * Scope default untuk Kasir (level_id = 2)
-     */
     protected static function booted(): void
     {
         static::addGlobalScope('kasir', function (Builder $builder) {
@@ -17,11 +14,6 @@ class Kasir extends User
         });
     }
 
-    // ==================== METHODS ====================
-
-    /**
-     * Proses pembayaran order
-     */
     public function prosesPembayaran(string $kdOrder, float $jumlahBayar): void
     {
         $order = Order::findOrFail($kdOrder);
@@ -38,17 +30,11 @@ class Kasir extends User
         $order->updateStatus('selesai');
     }
 
-    /**
-     * Hitung kembalian cash
-     */
     public function kembalianCash(float $totalHarga, float $jumlahBayar): float
     {
         return $jumlahBayar - $totalHarga;
     }
 
-    /**
-     * Cetak struk transaksi
-     */
     public function cetakStruk(string $kdTransaksi): array
     {
         $transaksi = Transaksi::with(['order.detailOrders.menu'])->findOrFail($kdTransaksi);
@@ -62,19 +48,11 @@ class Kasir extends User
         ];
     }
 
-    /**
-     * Verifikasi pembayaran via QR Code
-     */
     public function verifikasiPembayaranQR(string $qrData): bool
     {
-        // Implementasi verifikasi QR (misal: QRIS)
-        // Kembalikan true jika pembayaran valid
         return !empty($qrData);
     }
 
-    /**
-     * Cetak laporan transaksi harian
-     */
     public function cetakLaporan(string $tanggal): array
     {
         $transaksis = Transaksi::whereDate('tanggal', $tanggal)

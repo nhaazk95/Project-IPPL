@@ -49,4 +49,17 @@ class MejaController extends Controller
         $meja->delete();
         return back()->with('success', 'Meja berhasil dihapus.');
     }
+
+    public function toggleStatus(string $id)
+    {
+        $meja = Meja::findOrFail($id);
+        $meja->status = $meja->status === 'terisi' ? 'tersedia' : 'terisi';
+        $meja->save();
+
+        return response()->json([
+            'success' => true,
+            'status'  => $meja->status,
+            'no_meja' => $meja->no_meja,
+        ]);
+    }
 }

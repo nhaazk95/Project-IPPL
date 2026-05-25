@@ -24,22 +24,15 @@ class Pelanggan extends Model
         'no_meja' => 'integer',
     ];
 
-    // ==================== RELATIONSHIPS ====================
-
     public function orders()
     {
         return $this->hasMany(Order::class, 'kd_pelanggan', 'kd_pelanggan');
     }
 
-    /**
-     * FIX: keranjang via pelanggan_kd (bukan user_kd)
-     */
     public function keranjang()
     {
         return $this->hasMany(DetailOrderTemporary::class, 'pelanggan_kd', 'kd_pelanggan');
     }
-
-    // ==================== METHODS ====================
 
     public function loginSementara(string $namaPelanggan, int $noMeja): self
     {
@@ -61,7 +54,7 @@ class Pelanggan extends Model
 
         DetailOrderTemporary::create([
             'kd_detail'    => 'TMP-' . time(),
-            'pelanggan_kd' => $this->kd_pelanggan,  // FIX: was user_kd
+            'pelanggan_kd' => $this->kd_pelanggan, 
             'menu_kd'      => $kdMenu,
             'total'        => $jumlah,
             'sub_total'    => $menu->harga * $jumlah,

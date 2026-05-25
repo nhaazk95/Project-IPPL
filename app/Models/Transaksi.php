@@ -29,45 +29,26 @@ class Transaksi extends Model
         'waktu'       => 'datetime',
     ];
 
-    // ==================== RELATIONSHIPS ====================
-
-    /**
-     * Transaksi berasal dari satu Order
-     */
     public function order()
     {
         return $this->belongsTo(Order::class, 'order_kd', 'kd_order');
     }
 
-    /**
-     * Transaksi diproses oleh User (Kasir)
-     */
     public function kasir()
     {
         return $this->belongsTo(User::class, 'user_kd', 'kd_user');
     }
 
-    /**
-     * Transaksi memiliki banyak DetailOrder
-     */
     public function detailOrders()
     {
         return $this->hasMany(DetailOrder::class, 'transaksi_kd', 'kd_transaksi');
     }
 
-    // ==================== METHODS ====================
-
-    /**
-     * Hitung total harga dari detail order
-     */
     public function hitungTotal(): int
     {
         return $this->detailOrders()->sum('sub_total');
     }
 
-    /**
-     * Proses pembayaran dan simpan transaksi
-     */
     public function prosesPembayaran(string $kdOrder, string $kdKasir): self
     {
         $order = Order::with('detailOrders')->findOrFail($kdOrder);
@@ -82,7 +63,6 @@ class Transaksi extends Model
             'waktu'        => now(),
         ]);
 
-        // Update status detail order
         $order->detailOrders()->update([
             'transaksi_kd'  => $transaksi->kd_transaksi,
             'status_detail' => 'selesai',
@@ -93,17 +73,11 @@ class Transaksi extends Model
         return $transaksi;
     }
 
-    /**
-     * Hitung kembalian cash
-     */
     public function kembalianCash(int $jumlahBayar): int
     {
         return $jumlahBayar - $this->total_harga;
     }
 
-    /**
-     * Cetak struk transaksi
-     */
     public function cetakStruk(): array
     {
         return [

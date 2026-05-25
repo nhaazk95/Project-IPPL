@@ -28,53 +28,31 @@ class Menu extends Model
         'harga' => 'integer',
     ];
 
-    // ==================== RELATIONSHIPS ====================
-
-    /**
-     * Menu dimiliki oleh Kategori
-     */
     public function kategori()
     {
         return $this->belongsTo(Kategori::class, 'kategori_id', 'kd_kategori');
     }
 
-    /**
-     * Menu dipilih di banyak DetailOrderTemporary
-     */
     public function detailOrderTemporaries()
     {
         return $this->hasMany(DetailOrderTemporary::class, 'menu_kd', 'kd_menu');
     }
 
-    /**
-     * Menu ada di banyak DetailOrder
-     */
     public function detailOrders()
     {
         return $this->hasMany(DetailOrder::class, 'menu_kd', 'kd_menu');
     }
 
-    // ==================== METHODS ====================
-
-    /**
-     * Tambah menu baru
-     */
     public function tambah(array $data): void
     {
         self::create($data);
     }
 
-    /**
-     * Ubah data menu
-     */
     public function ubah(array $data): void
     {
         $this->update($data);
     }
 
-    /**
-     * Hapus menu
-     */
     public function hapus(): void
     {
         $this->delete();

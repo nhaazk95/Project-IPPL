@@ -17,8 +17,6 @@ class Level extends Model
         'nama_level',
     ];
 
-    // ==================== RELATIONSHIPS ====================
-
     public function users()
     {
         return $this->hasMany(User::class, 'level_id', 'id');

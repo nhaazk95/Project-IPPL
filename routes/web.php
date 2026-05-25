@@ -21,6 +21,7 @@ use App\Http\Controllers\Pelanggan\MenuController as PelangganMenu;
 use App\Http\Controllers\Pelanggan\KeranjangController;
 use App\Http\Controllers\Pelanggan\PesananController;
 use App\Http\Controllers\Pelanggan\PembayaranController;
+use App\Models\User;
 
 // ── Root ──────────────────────────────────────────────────
 Route::get('/', fn() => redirect()->route('login'));
@@ -42,22 +43,25 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/confirm-password',  [AuthController::class, 'showConfirm'])->name('password.confirm');
     Route::post('/confirm-password', [AuthController::class, 'confirm']);
+    Route::post('/profil/update', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profil.update');
 });
 
 // ── Admin ─────────────────────────────────────────────────
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
 
-    Route::resource('level', LevelController::class)
-        ->only(['index','update','destroy']);
+    Route::resource('level', LevelController::class)->only(['index', 'store', 'update', 'destroy']);
+    Route::delete('/level/user/{kd_user}', [LevelController::class, 'destroyUser'])->name('level.user.destroy');
 
     Route::resource('menu',     MenuController::class);
     Route::resource('kategori', KategoriController::class);
     Route::resource('meja',     MejaController::class);
+    Route::post('/meja/{id}/toggle', [MejaController::class, 'toggleStatus'])->name('meja.toggle');
 
-    Route::get('/transaksi',                    [AdminTransaksi::class, 'index'])->name('transaksi.index');
-    Route::post('/transaksi/{kd_order}/bayar',  [AdminTransaksi::class, 'bayar'])->name('transaksi.bayar');
-    Route::get('/transaksi/{id}',               [AdminTransaksi::class, 'show'])->name('transaksi.show');
+    Route::get('/transaksi',                          [AdminTransaksi::class, 'index'])->name('transaksi.index');
+    Route::post('/transaksi/{kd_order}/bayar',        [AdminTransaksi::class, 'bayar'])->name('transaksi.bayar');
+    Route::get('/transaksi/struk/{kd_transaksi}',     [AdminTransaksi::class, 'struk'])->name('struk');
+    Route::get('/transaksi/{id}',                     [AdminTransaksi::class, 'show'])->name('transaksi.show');
 
     Route::get('/laporan/orderan',              [LaporanController::class, 'orderan'])->name('laporan.orderan');
     Route::get('/laporan/orderan/export',       [LaporanController::class, 'exportOrderan'])->name('laporan.export');
@@ -65,7 +69,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/laporan/transaksi/export',     [LaporanController::class, 'exportTransaksi'])->name('laporan.transaksi.export');
 });
 
-// ── Kasir (FIXED DI SINI) ─────────────────────────────────
+// ── Kasir ─────────────────────────────────────────────────
 Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->name('kasir.')->group(function () {
     Route::get('/dashboard',               [KasirDashboard::class, 'index'])->name('dashboard');
 
@@ -73,13 +77,11 @@ Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->name('kasir.')->grou
     Route::get('/order/{kd_order}',        [OrderController::class, 'detail'])->name('order.detail');
     Route::post('/order/{kd_order}/bayar', [OrderController::class, 'prosesBayar'])->name('proses-bayar');
 
-    // ✅ FIX DI SINI (sebelumnya 'transaksi')
     Route::get('/transaksi',               [KasirTransaksi::class, 'index'])->name('transaksi.index');
 
     Route::get('/struk/{kd_transaksi}',    [KasirTransaksi::class, 'struk'])->name('struk');
     Route::get('/laporan',                 [KasirTransaksi::class, 'laporan'])->name('laporan');
 
-    // API endpoint untuk notifikasi order baru (polling)
     Route::get('/api/notif-order',         [KasirDashboard::class, 'notifOrder'])->name('api.notif');
 });
 
