@@ -5,18 +5,11 @@ namespace App\Http\Controllers\Pelanggan;
 use App\Http\Controllers\Controller;
 use App\Models\DetailOrderTemporary;
 use App\Models\Menu;
-use App\Models\Order;
-use App\Models\DetailOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class KeranjangController extends Controller
 {
-    /**
-     * Ambil kd_pelanggan dari session.
-     * Session di-set di AuthController: session(['pelanggan' => ['kd_pelanggan' => ...]]).
-     * Laravel dot-notation: session('pelanggan.kd_pelanggan')
-     */
     private function kdPelanggan(): string
     {
         return session('pelanggan.kd_pelanggan', '');
@@ -45,7 +38,6 @@ class KeranjangController extends Controller
         $kdPelanggan = $this->kdPelanggan();
         $menu        = Menu::findOrFail($request->kd_menu);
 
-        // Cek apakah sudah ada di keranjang
         $existing = DetailOrderTemporary::where('pelanggan_kd', $kdPelanggan)
             ->where('menu_kd', $request->kd_menu)
             ->first();
@@ -59,12 +51,12 @@ class KeranjangController extends Controller
             ]);
         } else {
             DetailOrderTemporary::create([
-                'kd_detail'   => 'TMP-' . strtoupper(Str::random(8)),
+                'kd_detail'    => 'TMP-' . strtoupper(Str::random(8)),
                 'pelanggan_kd' => $kdPelanggan,
-                'menu_kd'     => $request->kd_menu,
-                'total'       => $request->jumlah,
-                'sub_total'   => $menu->harga * $request->jumlah,
-                'keterangan'  => $request->keterangan,
+                'menu_kd'      => $request->kd_menu,
+                'total'        => $request->jumlah,
+                'sub_total'    => $menu->harga * $request->jumlah,
+                'keterangan'   => $request->keterangan,
             ]);
         }
 
@@ -78,7 +70,7 @@ class KeranjangController extends Controller
     {
         $detail = DetailOrderTemporary::findOrFail($kdDetail);
         $menu   = Menu::findOrFail($detail->menu_kd);
-        $aksi   = $request->aksi; // 'tambah' atau 'kurang'
+        $aksi   = $request->aksi;
 
         $jumlahBaru = $aksi === 'tambah'
             ? $detail->total + 1
@@ -103,10 +95,13 @@ class KeranjangController extends Controller
         return back()->with('success', 'Item dihapus dari keranjang.');
     }
 
+    /**
+     * Checkout: simpan keterangan ke session, redirect ke halaman pilih metode.
+     * Order belum dibuat — belum masuk ke kasir.
+     */
     public function checkout(Request $request)
     {
         $kdPelanggan = $this->kdPelanggan();
-        $noMeja      = session('pelanggan.no_meja');
 
         $keranjang = DetailOrderTemporary::where('pelanggan_kd', $kdPelanggan)->with('menu')->get();
 
@@ -115,38 +110,10 @@ class KeranjangController extends Controller
                 ->with('error', 'Keranjang kosong!');
         }
 
-        // Buat Order — gunakan kolom yg ada di tabel orders: kd_pelanggan (bukan user_kd)
-        $kdOrder = 'ORD-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(4));
+        // Simpan keterangan ke session, belum buat order
+        session(['checkout_keterangan' => $request->keterangan]);
 
-        $order = Order::create([
-            'kd_order'     => $kdOrder,
-            'no_meja'      => $noMeja,
-            'kd_pelanggan' => $kdPelanggan,
-            'nama_user'    => session('pelanggan.name'),
-            'tanggal'      => now()->toDateString(),
-            'waktu'        => now(),
-            'keterangan'   => $request->keterangan,
-            'status_order' => 'pending',
-        ]);
-
-        // Buat Detail Order — kolom tabel: pelanggan_kd (bukan user_kd)
-        foreach ($keranjang as $item) {
-            DetailOrder::create([
-                'kd_detail'     => 'DTL-' . strtoupper(Str::random(8)),
-                'order_kd'      => $kdOrder,
-                'pelanggan_kd'  => $kdPelanggan,
-                'menu_kd'       => $item->menu_kd,
-                'total'         => $item->total,
-                'sub_total'     => $item->sub_total,
-                'keterangan'    => $item->keterangan,
-                'status_detail' => 'pending',
-            ]);
-        }
-
-        // Kosongkan keranjang
-        DetailOrderTemporary::where('pelanggan_kd', $kdPelanggan)->delete();
-        session(['keranjang_count' => 0]);
-
-        return redirect()->route('pelanggan.pembayaran', $kdOrder);
+        // Redirect ke halaman pembayaran (pilih metode) — pakai kd_temp sebagai penanda
+        return redirect()->route('pelanggan.pembayaran.preview');
     }
 }

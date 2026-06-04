@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// routes/web.php — DNUSA Resto (FIXED)
+// routes/web.php — DNUSA Resto
 // ============================================================
 
 use Illuminate\Support\Facades\Route;
@@ -20,8 +20,6 @@ use App\Http\Controllers\Pelanggan\BerandaController;
 use App\Http\Controllers\Pelanggan\MenuController as PelangganMenu;
 use App\Http\Controllers\Pelanggan\KeranjangController;
 use App\Http\Controllers\Pelanggan\PesananController;
-use App\Http\Controllers\Pelanggan\PembayaranController;
-use App\Models\User;
 
 // ── Root ──────────────────────────────────────────────────
 Route::get('/', fn() => redirect()->route('login'));
@@ -58,15 +56,15 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('meja',     MejaController::class);
     Route::post('/meja/{id}/toggle', [MejaController::class, 'toggleStatus'])->name('meja.toggle');
 
-    Route::get('/transaksi',                          [AdminTransaksi::class, 'index'])->name('transaksi.index');
-    Route::post('/transaksi/{kd_order}/bayar',        [AdminTransaksi::class, 'bayar'])->name('transaksi.bayar');
-    Route::get('/transaksi/struk/{kd_transaksi}',     [AdminTransaksi::class, 'struk'])->name('struk');
-    Route::get('/transaksi/{id}',                     [AdminTransaksi::class, 'show'])->name('transaksi.show');
+    Route::get('/transaksi',                      [AdminTransaksi::class, 'index'])->name('transaksi.index');
+    Route::post('/transaksi/{kd_order}/bayar',    [AdminTransaksi::class, 'bayar'])->name('transaksi.bayar');
+    Route::get('/transaksi/struk/{kd_transaksi}', [AdminTransaksi::class, 'struk'])->name('struk');
+    Route::get('/transaksi/{id}',                 [AdminTransaksi::class, 'show'])->name('transaksi.show');
 
-    Route::get('/laporan/orderan',              [LaporanController::class, 'orderan'])->name('laporan.orderan');
-    Route::get('/laporan/orderan/export',       [LaporanController::class, 'exportOrderan'])->name('laporan.export');
-    Route::get('/laporan/transaksi',            [LaporanController::class, 'transaksi'])->name('laporan.transaksi');
-    Route::get('/laporan/transaksi/export',     [LaporanController::class, 'exportTransaksi'])->name('laporan.transaksi.export');
+    Route::get('/laporan/orderan',          [LaporanController::class, 'orderan'])->name('laporan.orderan');
+    Route::get('/laporan/orderan/export',   [LaporanController::class, 'exportOrderan'])->name('laporan.export');
+    Route::get('/laporan/transaksi',        [LaporanController::class, 'transaksi'])->name('laporan.transaksi');
+    Route::get('/laporan/transaksi/export', [LaporanController::class, 'exportTransaksi'])->name('laporan.transaksi.export');
 });
 
 // ── Kasir ─────────────────────────────────────────────────
@@ -78,7 +76,6 @@ Route::middleware(['auth', 'role:kasir'])->prefix('kasir')->name('kasir.')->grou
     Route::post('/order/{kd_order}/bayar', [OrderController::class, 'prosesBayar'])->name('proses-bayar');
 
     Route::get('/transaksi',               [KasirTransaksi::class, 'index'])->name('transaksi.index');
-
     Route::get('/struk/{kd_transaksi}',    [KasirTransaksi::class, 'struk'])->name('struk');
     Route::get('/laporan',                 [KasirTransaksi::class, 'laporan'])->name('laporan');
 
@@ -103,8 +100,11 @@ Route::prefix('pelanggan')->name('pelanggan.')->group(function () {
         Route::delete('/keranjang/{kd_detail}', [KeranjangController::class, 'hapus'])->name('keranjang.hapus');
         Route::post('/checkout',                [KeranjangController::class, 'checkout'])->name('checkout');
 
-        Route::get('/pesanan',                            [PesananController::class, 'index'])->name('pesanan');
-        Route::get('/pembayaran/{kd_order}',              [PesananController::class, 'pembayaran'])->name('pembayaran');
-        Route::post('/pembayaran/{kd_order}/konfirmasi',  [PesananController::class, 'konfirmasi'])->name('konfirmasi-bayar');
+        Route::get('/pembayaran-preview',            [PesananController::class, 'preview'])->name('pembayaran.preview');
+        Route::post('/pembayaran-preview/konfirmasi', [PesananController::class, 'konfirmasiMetode'])->name('konfirmasi-metode');
+
+        Route::get('/pesanan',                           [PesananController::class, 'index'])->name('pesanan');
+        Route::get('/pembayaran/{kd_order}',             [PesananController::class, 'pembayaran'])->name('pembayaran');
+        Route::post('/pembayaran/{kd_order}/konfirmasi', [PesananController::class, 'konfirmasi'])->name('konfirmasi-bayar');
     });
 });

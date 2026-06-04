@@ -258,8 +258,8 @@
             color: var(--coklat) !important;
             border: none !important;
             border-radius: 50px !important;
-            padding: .6rem 1.5rem !important;
-            font-size: .85rem !important;
+            padding: .45rem 1.1rem !important;
+            font-size: .78rem !important;
             font-weight: 700 !important;
             cursor: pointer !important;
             font-family: inherit !important;
@@ -267,9 +267,7 @@
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            gap: .4rem !important;
-            width: fit-content !important;
-            max-width: fit-content !important;
+            gap: .35rem !important;
             white-space: nowrap !important;
             line-height: 1 !important;
         }
@@ -305,9 +303,7 @@
             <div class="empty-keranjang">
                 <i class="bi bi-cart-x"></i>
                 <p>Keranjang kamu masih kosong</p>
-                <a href="{{ route('pelanggan.menu') }}" class="btn-ke-menu">
-                    <i class="bi bi-egg-fried"></i> Lihat Menu
-                </a>
+
             </div>
         @else
 
@@ -336,7 +332,7 @@
                             {{-- Kurang --}}
                             <form action="{{ route('pelanggan.keranjang.update', $item->kd_detail) }}" method="POST" style="margin:0;">
                                 @csrf @method('PUT')
-                                <input type="hidden" name="jumlah" value="{{ max(1, $item->total - 1) }}">
+                                <input type="hidden" name="aksi" value="kurang">
                                 <button type="submit" class="qty-btn-circle">−</button>
                             </form>
 
@@ -345,7 +341,7 @@
                             {{-- Tambah --}}
                             <form action="{{ route('pelanggan.keranjang.update', $item->kd_detail) }}" method="POST" style="margin:0;">
                                 @csrf @method('PUT')
-                                <input type="hidden" name="jumlah" value="{{ $item->total + 1 }}">
+                                <input type="hidden" name="aksi" value="tambah">
                                 <button type="submit" class="qty-btn-circle">+</button>
                             </form>
 
