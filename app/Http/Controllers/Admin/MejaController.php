@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\DetailOrderTemporary;
 use App\Models\Meja;
+use App\Models\Pelanggan;
 use Illuminate\Http\Request;
 
 class MejaController extends Controller
@@ -50,6 +52,9 @@ class MejaController extends Controller
         return back()->with('success', 'Meja berhasil dihapus.');
     }
 
+    /**
+     * Toggle status meja via AJAX (klik meja di grid)
+     */
     public function toggleStatus(string $id)
     {
         $meja = Meja::findOrFail($id);
@@ -61,5 +66,30 @@ class MejaController extends Controller
             'status'  => $meja->status,
             'no_meja' => $meja->no_meja,
         ]);
+    }
+
+    /**
+     * Force-logout pelanggan di meja tertentu.
+     * Kosongkan keranjang temp + bebaskan meja.
+     * Session pelanggan akan invalid otomatis saat mereka refresh (middleware cek DB).
+     */
+    public function kosongkanMeja(string $id)
+    {
+        $meja = Meja::findOrFail($id);
+
+        // Cari pelanggan aktif di meja ini (yang paling baru login)
+        $pelanggan = Pelanggan::where('no_meja', $meja->no_meja)
+            ->latest('login_at')
+            ->first();
+
+        if ($pelanggan) {
+            // Hapus keranjang temporary milik pelanggan ini
+            DetailOrderTemporary::where('pelanggan_kd', $pelanggan->kd_pelanggan)->delete();
+        }
+
+        // Kosongkan meja
+        $meja->update(['status' => 'tersedia']);
+
+        return back()->with('success', 'Meja ' . $meja->no_meja . ' berhasil dikosongkan. Pelanggan akan otomatis keluar.');
     }
 }

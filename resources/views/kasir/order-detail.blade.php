@@ -14,9 +14,8 @@
 
 <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start;">
 
-    {{-- ===== KIRI: Detail Order ===== --}}
+    {{-- KIRI: Detail Order --}}
     <div>
-        {{-- Info Order --}}
         <div class="card mb-20">
             <div class="card-header">
                 <span class="card-title"><i class="fa-solid fa-receipt" style="margin-right:8px;"></i>Detail Order</span>
@@ -38,20 +37,38 @@
                     </div>
                     <div>
                         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:4px;">Status</div>
-                        <span class="badge badge-gold">{{ ucfirst($order->status_order) }}</span>
+                        @php
+                            $stMap = [
+                                'pending'  => ['badge-info',    'Pending'],
+                                'diproses' => ['badge-gold',    'Diproses'],
+                                'siap'     => ['badge-success', 'Siap Bayar'],
+                                'selesai'  => ['badge-brown',   'Selesai'],
+                            ];
+                            [$bc, $bl] = $stMap[$order->status_order] ?? ['badge-gold', ucfirst($order->status_order)];
+                        @endphp
+                        <span class="badge {{ $bc }}">{{ $bl }}</span>
                     </div>
                 </div>
 
                 @if($order->keterangan)
-                <div style="background:var(--cream);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--text-mid);">
-                    <i class="fa-solid fa-note-sticky" style="color:var(--gold-dark);margin-right:6px;"></i>
+                @php
+                    $ket     = strtolower($order->keterangan);
+                    $isQris  = str_contains($ket, 'qris');
+                    $isKasir = str_contains($ket, 'kasir');
+                @endphp
+                <div style="background:var(--cream);border-radius:10px;padding:10px 14px;font-size:13px;color:var(--text-mid);display:flex;align-items:center;gap:8px;">
+                    <i class="fa-solid fa-note-sticky" style="color:var(--gold-dark);"></i>
                     {{ $order->keterangan }}
+                    @if($isQris)
+                        <span class="badge badge-info" style="margin-left:auto;"><i class="fa-solid fa-qrcode"></i> QRIS</span>
+                    @elseif($isKasir)
+                        <span class="badge badge-success" style="margin-left:auto;"><i class="fa-solid fa-money-bill"></i> Kasir</span>
+                    @endif
                 </div>
                 @endif
             </div>
         </div>
 
-        {{-- Tabel Item --}}
         <div class="card">
             <div class="card-header">
                 <span class="card-title"><i class="fa-solid fa-list-check" style="margin-right:8px;"></i>Item Pesanan</span>
@@ -72,7 +89,7 @@
                         <tr>
                             <td>
                                 <div style="font-weight:700;color:var(--brown);">{{ $item->menu->name_menu ?? '-' }}</div>
-                                @if($item->menu->kategori)
+                                @if($item->menu?->kategori)
                                 <div style="font-size:11px;color:var(--text-light);">{{ $item->menu->kategori->name_kategori }}</div>
                                 @endif
                             </td>
@@ -95,7 +112,7 @@
         </div>
     </div>
 
-    {{-- ===== KANAN: Form Pembayaran ===== --}}
+    {{-- KANAN: Form Pembayaran --}}
     <div class="card" style="position:sticky;top:80px;">
         <div class="card-header">
             <span class="card-title"><i class="fa-solid fa-cash-register" style="margin-right:8px;"></i>Transaksi Pembayaran</span>
@@ -116,26 +133,42 @@
 
                 <div class="form-group">
                     <label class="form-label">Metode Pembayaran</label>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+
+                        {{-- Cash --}}
                         <label style="cursor:pointer;">
                             <input type="radio" name="metode" value="cash" checked style="display:none;" id="radioCash">
-                            <div class="metode-btn" id="btnCash" onclick="selectMetode('cash')"
-                                style="border:2px solid var(--gold);background:rgba(201,162,39,.12);border-radius:10px;padding:12px;text-align:center;">
-                                <i class="fa-solid fa-money-bills" style="font-size:22px;color:var(--gold-dark);display:block;margin-bottom:5px;"></i>
-                                <span style="font-size:12px;font-weight:700;color:var(--brown);">Cash</span>
+                            <div class="metode-btn active-metode" id="btnCash" onclick="selectMetode('cash')"
+                                style="border-radius:10px;padding:10px 6px;text-align:center;border:2px solid var(--gold);background:rgba(201,162,39,.12);">
+                                <i class="fa-solid fa-money-bill-wave" style="font-size:20px;color:var(--gold-dark);display:block;margin-bottom:4px;"></i>
+                                <span style="font-size:11px;font-weight:700;color:var(--brown);">Cash</span>
                             </div>
                         </label>
+
+                        {{-- Debit/Kartu --}}
+                        <label style="cursor:pointer;">
+                            <input type="radio" name="metode" value="debit" style="display:none;" id="radioDebit">
+                            <div class="metode-btn" id="btnDebit" onclick="selectMetode('debit')"
+                                style="border-radius:10px;padding:10px 6px;text-align:center;border:2px solid var(--cream-dark);background:var(--cream);">
+                                <i class="fa-solid fa-credit-card" style="font-size:20px;color:var(--text-light);display:block;margin-bottom:4px;"></i>
+                                <span style="font-size:11px;font-weight:700;color:var(--text-mid);">Debit</span>
+                            </div>
+                        </label>
+
+                        {{-- QRIS --}}
                         <label style="cursor:pointer;">
                             <input type="radio" name="metode" value="qris" style="display:none;" id="radioQris">
                             <div class="metode-btn" id="btnQris" onclick="selectMetode('qris')"
-                                style="border:2px solid var(--cream-dark);background:var(--cream);border-radius:10px;padding:12px;text-align:center;">
-                                <i class="fa-solid fa-qrcode" style="font-size:22px;color:var(--text-light);display:block;margin-bottom:5px;"></i>
-                                <span style="font-size:12px;font-weight:700;color:var(--text-mid);">QRIS</span>
+                                style="border-radius:10px;padding:10px 6px;text-align:center;border:2px solid var(--cream-dark);background:var(--cream);">
+                                <i class="fa-solid fa-qrcode" style="font-size:20px;color:var(--text-light);display:block;margin-bottom:4px;"></i>
+                                <span style="font-size:11px;font-weight:700;color:var(--text-mid);">QRIS</span>
                             </div>
                         </label>
+
                     </div>
                 </div>
 
+                {{-- Input bayar — hanya untuk cash --}}
                 <div id="cashSection">
                     <div class="form-group">
                         <label class="form-label">Jumlah Bayar</label>
@@ -143,11 +176,17 @@
                             placeholder="Masukkan jumlah uang" min="{{ $total }}"
                             oninput="hitungKembalian({{ $total }})" style="font-size:15px;padding:11px 13px;">
                     </div>
-                    <div class="form-group" id="kembalianGroup" style="display:none;">
+                    <div id="kembalianGroup" style="display:none;margin-bottom:14px;">
                         <label class="form-label">Kembalian</label>
-                        <div id="fKembalian" style="background:rgba(26,122,74,.08);border:2px solid var(--success);
-                            border-radius:10px;padding:11px 14px;font-size:16px;font-weight:800;
-                            color:var(--success);text-align:center;"></div>
+                        <div id="fKembalian" style="border-radius:10px;padding:11px 14px;font-size:16px;font-weight:800;text-align:center;"></div>
+                    </div>
+                </div>
+
+                {{-- Info QRIS / Debit --}}
+                <div id="nonCashInfo" style="display:none;margin-bottom:14px;">
+                    <div style="background:var(--cream);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--text-mid);text-align:center;">
+                        <i class="fa-solid fa-circle-check" style="color:var(--success);margin-right:6px;"></i>
+                        Klik <strong>Konfirmasi</strong> untuk menyelesaikan transaksi
                     </div>
                 </div>
 
@@ -170,33 +209,38 @@
 
 @push('styles')
 <style>
-.metode-btn { transition: all .2s; }
+.metode-btn { transition: all .18s; }
 .metode-btn:hover { transform: translateY(-2px); }
-@media (max-width:900px) {
-    .page-content > div { grid-template-columns: 1fr !important; }
-}
+@media (max-width:900px) { .page-content > div { grid-template-columns: 1fr !important; } }
 </style>
 @endpush
 
 @push('scripts')
 <script>
-let metodeAktif = 'cash';
+const GOLD_STYLE  = 'border:2px solid var(--gold);background:rgba(201,162,39,.12);';
+const PLAIN_STYLE = 'border:2px solid var(--cream-dark);background:var(--cream);';
+const metodes     = ['Cash','Debit','Qris'];
 
 function selectMetode(m) {
-    metodeAktif = m;
-    document.getElementById('radioCash').checked = m === 'cash';
-    document.getElementById('radioQris').checked = m === 'qris';
+    ['cash','debit','qris'].forEach(k => {
+        const btn = document.getElementById('btn' + k.charAt(0).toUpperCase() + k.slice(1));
+        const ico = btn.querySelector('i');
+        const lbl = btn.querySelector('span');
+        const active = k === m;
+        btn.style.cssText = `border-radius:10px;padding:10px 6px;text-align:center;` +
+            (active ? GOLD_STYLE : PLAIN_STYLE);
+        ico.style.color = active ? 'var(--gold-dark)' : 'var(--text-light)';
+        lbl.style.color = active ? 'var(--brown)'     : 'var(--text-mid)';
+        document.getElementById('radio' + k.charAt(0).toUpperCase() + k.slice(1)).checked = active;
+    });
 
-    const gold  = 'border:2px solid var(--gold);background:rgba(201,162,39,.12);';
-    const plain = 'border:2px solid var(--cream-dark);background:var(--cream);';
+    const isCash = m === 'cash';
+    document.getElementById('cashSection').style.display    = isCash ? '' : 'none';
+    document.getElementById('nonCashInfo').style.display    = isCash ? 'none' : '';
+    document.getElementById('kembalianGroup').style.display = 'none';
 
-    document.getElementById('btnCash').style.cssText  += m === 'cash'  ? gold : plain;
-    document.getElementById('btnQris').style.cssText  += m === 'qris'  ? gold : plain;
-
-    document.getElementById('btnCash').querySelector('i').style.color  = m === 'cash'  ? 'var(--gold-dark)' : 'var(--text-light)';
-    document.getElementById('btnQris').querySelector('i').style.color  = m === 'qris'  ? 'var(--gold-dark)' : 'var(--text-light)';
-
-    document.getElementById('cashSection').style.display = m === 'cash' ? '' : 'none';
+    // Hapus required pada jumlah_bayar jika bukan cash
+    document.getElementById('fBayar').required = isCash;
 }
 
 function hitungKembalian(total) {
@@ -206,15 +250,14 @@ function hitungKembalian(total) {
 
     if (bayar >= total) {
         const kembalian = bayar - total;
-        el.textContent = 'Rp ' + kembalian.toLocaleString('id-ID');
+        el.textContent     = 'Rp ' + kembalian.toLocaleString('id-ID');
+        el.style.cssText   = 'border-radius:10px;padding:11px 14px;font-size:16px;font-weight:800;text-align:center;background:rgba(26,122,74,.08);border:2px solid var(--success);color:var(--success);';
         group.style.display = '';
-        el.style.color = 'var(--success)';
-        el.parentElement.querySelector('.form-label').style.color = 'var(--success)';
     } else if (bayar > 0) {
         const kurang = total - bayar;
-        el.textContent = '⚠ Kurang: Rp ' + kurang.toLocaleString('id-ID');
+        el.textContent     = '⚠ Kurang: Rp ' + kurang.toLocaleString('id-ID');
+        el.style.cssText   = 'border-radius:10px;padding:11px 14px;font-size:16px;font-weight:800;text-align:center;background:#fde8e8;border:2px solid var(--danger);color:var(--danger);';
         group.style.display = '';
-        el.style.color = 'var(--danger)';
     } else {
         group.style.display = 'none';
     }

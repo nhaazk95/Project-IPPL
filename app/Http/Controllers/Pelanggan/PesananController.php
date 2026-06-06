@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\DetailOrderTemporary;
 use App\Models\Order;
 use App\Models\DetailOrder;
+use App\Models\Meja;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -13,35 +14,44 @@ class PesananController extends Controller
 {
     public function index()
     {
-        $sess   = session('pelanggan');
-        $orders = Order::with(['detailOrders.menu', 'transaksi'])
-            ->where('kd_pelanggan', $sess['kd_pelanggan'])
-            ->latest('waktu')
-            ->get();
+        $sess        = session('pelanggan');
+        $kdPelanggan = $sess['kd_pelanggan'];
+        $loginAt     = $sess['login_at'] ?? null;
+
+        $query = Order::with(['detailOrders.menu', 'transaksi'])
+            ->where('kd_pelanggan', $kdPelanggan);
+
+        if ($loginAt) {
+            // Filter hanya order setelah login sesi ini
+            $query->where('waktu', '>=', $loginAt);
+        } else {
+            // Fallback: hanya order hari ini
+            $query->whereDate('waktu', today());
+        }
+
+        $orders = $query->latest('waktu')->get();
 
         return view('pelanggan.pesanan', compact('orders'));
     }
 
     /**
-     * Halaman preview pembayaran — tampilkan isi keranjang + pilih metode.
-     * Order BELUM dibuat, keranjang masih ada.
+     * Preview pilih metode — order BELUM dibuat, keranjang masih ada.
      */
     public function preview()
     {
         $kdPelanggan = session('pelanggan.kd_pelanggan');
 
         $keranjang = DetailOrderTemporary::where('pelanggan_kd', $kdPelanggan)
-            ->with('menu')
-            ->get();
+            ->with('menu')->get();
 
         if ($keranjang->isEmpty()) {
             return redirect()->route('pelanggan.keranjang')
                 ->with('error', 'Keranjang kosong!');
         }
 
-        $totalHarga  = $keranjang->sum('sub_total');
-        $keterangan  = session('checkout_keterangan');
-        $noMeja      = session('pelanggan.no_meja');
+        $totalHarga = $keranjang->sum('sub_total');
+        $keterangan = session('checkout_keterangan');
+        $noMeja     = session('pelanggan.no_meja');
 
         return view('pelanggan.pembayaran-preview', compact('keranjang', 'totalHarga', 'keterangan', 'noMeja'));
     }
@@ -51,9 +61,7 @@ class PesananController extends Controller
      */
     public function konfirmasiMetode(Request $request)
     {
-        $request->validate([
-            'metode' => 'required|in:kasir,qris',
-        ]);
+        $request->validate(['metode' => 'required|in:kasir,qris']);
 
         $kdPelanggan = session('pelanggan.kd_pelanggan');
         $noMeja      = session('pelanggan.no_meja');
@@ -65,17 +73,16 @@ class PesananController extends Controller
             return redirect()->route('pelanggan.keranjang')->with('error', 'Keranjang kosong!');
         }
 
-        // Buat Order — baru masuk ke kasir
         $kdOrder = 'ORD-' . now()->format('YmdHis') . '-' . strtoupper(Str::random(4));
 
         $order = Order::create([
             'kd_order'     => $kdOrder,
             'no_meja'      => $noMeja,
             'kd_pelanggan' => $kdPelanggan,
-            'nama_user'    => session('pelanggan.name'),
+            'nama_user'    => session('pelanggan.name_pelanggan'),
             'tanggal'      => now()->toDateString(),
             'waktu'        => now(),
-            'keterangan'   => $keterangan . ($keterangan ? ' | ' : '') . 'Metode: ' . strtoupper($request->metode),
+            'keterangan'   => trim(($keterangan ?? '') . ' | Metode: ' . strtoupper($request->metode), ' |'),
             'status_order' => 'pending',
         ]);
 
@@ -92,11 +99,10 @@ class PesananController extends Controller
             ]);
         }
 
-        // Kosongkan keranjang sekarang — order sudah masuk
+        // Kosongkan keranjang — order sudah masuk ke kasir
         DetailOrderTemporary::where('pelanggan_kd', $kdPelanggan)->delete();
         session(['keranjang_count' => 0, 'checkout_keterangan' => null]);
 
-        // Redirect ke halaman pembayaran sesuai metode
         return redirect()->route('pelanggan.pembayaran', [
             'kd_order' => $kdOrder,
             'metode'   => $request->metode,
@@ -104,7 +110,7 @@ class PesananController extends Controller
     }
 
     /**
-     * Halaman pembayaran setelah order dibuat (QRIS / Kasir).
+     * Halaman pembayaran setelah order dibuat.
      */
     public function pembayaran(string $kd_order, Request $request)
     {
@@ -130,7 +136,9 @@ class PesananController extends Controller
             ->where('kd_order', $kd_order)
             ->firstOrFail();
 
-        $order->update(['keterangan' => ($order->keterangan ? $order->keterangan . ' | ' : '') . 'Metode: ' . strtoupper($request->metode)]);
+        $order->update([
+            'keterangan' => ($order->keterangan ? $order->keterangan . ' | ' : '') . 'Metode: ' . strtoupper($request->metode)
+        ]);
 
         return response()->json(['success' => true]);
     }

@@ -49,12 +49,19 @@
     <div class="card-body" style="padding:20px;">
         <div class="meja-grid" id="mejaGrid">
             @foreach($mejas as $meja)
-            @php $terisi = $meja->status === 'terisi'; @endphp
+            @php
+                $terisi = $meja->status === 'terisi';
+                $pelangganAktif = $terisi
+                    ? \App\Models\Pelanggan::where('no_meja', $meja->no_meja)->latest('login_at')->first()
+                    : null;
+            @endphp
             <div class="meja-box {{ $terisi ? 'terisi' : 'tersedia' }}"
                 id="meja-{{ $meja->id }}"
                 data-id="{{ $meja->id }}"
                 data-no="{{ $meja->no_meja }}"
                 data-status="{{ $meja->status }}"
+                data-pelanggan-nama="{{ $pelangganAktif?->name_pelanggan ?? '' }}"
+                data-login-at="{{ $pelangganAktif?->login_at ? \Carbon\Carbon::parse($pelangganAktif->login_at)->format('H:i') : '' }}"
                 title="Klik untuk ubah status · Tahan untuk edit">
                 <div class="meja-chair">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -62,7 +69,15 @@
                     </svg>
                 </div>
                 <div class="meja-num">{{ $meja->no_meja }}</div>
-                <div class="meja-lbl">{{ $terisi ? 'Terisi' : 'Kosong' }}</div>
+                <div class="meja-lbl">
+                    @if($terisi && $pelangganAktif)
+                        {{ $pelangganAktif->name_pelanggan }}
+                    @elseif($terisi)
+                        Terisi
+                    @else
+                        Kosong
+                    @endif
+                </div>
             </div>
             @endforeach
         </div>
@@ -144,6 +159,24 @@
         <form method="POST" id="editForm">
             @csrf @method('PUT')
             <div class="modal-body">
+                {{-- Info pelanggan aktif jika meja terisi --}}
+                <div id="infoTerisi" style="display:none;background:rgba(201,162,39,.1);
+                    border:1.5px solid rgba(201,162,39,.3);border-radius:10px;
+                    padding:10px 13px;margin-bottom:14px;font-size:12.5px;color:var(--brown);">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <span><i class="fa-solid fa-user" style="margin-right:6px;color:var(--gold-dark);"></i>
+                            <strong id="infoPelangganNama">—</strong></span>
+                        <span style="font-size:11px;color:var(--text-light);" id="infoPelangganLogin"></span>
+                    </div>
+                    <form method="POST" id="kosongkanForm" style="margin-top:10px;">
+                        @csrf
+                        <button type="submit" class="btn-kosongkan"
+                            onclick="return confirm('Paksa kosongkan meja ini?\nPelanggan akan otomatis keluar.')">
+                            <i class="fa-solid fa-right-from-bracket"></i> Kosongkan Meja (Force Logout)
+                        </button>
+                    </form>
+                </div>
+
                 <div class="form-group">
                     <label class="form-label">Nomor Meja</label>
                     <input type="number" name="no_meja" id="eNoMeja" class="form-control" min="1" required>
@@ -251,6 +284,17 @@
     transform: translateX(-50%) translateY(0);
 }
 
+/* Tombol kosongkan meja */
+.btn-kosongkan {
+    display: inline-flex; align-items: center; gap: 6px;
+    width: 100%; padding: 7px 12px; border-radius: 8px;
+    font-size: 12px; font-weight: 700;
+    background: #fde8e8; border: 1.5px solid #f5c6c6;
+    color: var(--danger); cursor: pointer; transition: var(--transition);
+    font-family: inherit; justify-content: center;
+}
+.btn-kosongkan:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+
 /* Pagination */
 .meja-pg-btn {
     display: inline-flex; align-items: center;
@@ -292,6 +336,18 @@ function editMeja(m) {
     document.getElementById('editMejaTitle').textContent = '— Meja ' + m.no_meja;
     document.getElementById('editForm').action   = '/admin/meja/' + m.id;
     document.getElementById('deleteForm').action = '/admin/meja/' + m.id;
+    document.getElementById('kosongkanForm').action = '/admin/meja/' + m.id + '/kosongkan';
+
+    // Tampilkan info pelanggan aktif jika meja terisi
+    const infoBox = document.getElementById('infoTerisi');
+    if (m.status === 'terisi') {
+        document.getElementById('infoPelangganNama').textContent = m.pelanggan_nama || 'Ada pelanggan';
+        document.getElementById('infoPelangganLogin').textContent = m.login_at ? 'Login: ' + m.login_at : '';
+        infoBox.style.display = 'block';
+    } else {
+        infoBox.style.display = 'none';
+    }
+
     openModal('editModal');
 }
 
@@ -377,9 +433,11 @@ document.querySelectorAll('.meja-box').forEach(box => {
         pressTimer = setTimeout(() => {
             pressTimer = null;
             editMeja({
-                id:       box.dataset.id,
-                no_meja:  box.dataset.no,
-                status:   box.dataset.status,
+                id:             box.dataset.id,
+                no_meja:        box.dataset.no,
+                status:         box.dataset.status,
+                pelanggan_nama: box.dataset.pelangganNama,
+                login_at:       box.dataset.loginAt,
             });
         }, 600);
     });
@@ -405,9 +463,11 @@ document.querySelectorAll('.meja-box').forEach(box => {
         pressTimer = setTimeout(() => {
             pressTimer = null;
             editMeja({
-                id:      box.dataset.id,
-                no_meja: box.dataset.no,
-                status:  box.dataset.status,
+                id:             box.dataset.id,
+                no_meja:        box.dataset.no,
+                status:         box.dataset.status,
+                pelanggan_nama: box.dataset.pelangganNama,
+                login_at:       box.dataset.loginAt,
             });
         }, 600);
     }, { passive: true });

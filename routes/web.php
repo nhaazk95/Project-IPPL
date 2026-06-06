@@ -1,7 +1,5 @@
 <?php
-// ============================================================
 // routes/web.php — DNUSA Resto
-// ============================================================
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
@@ -21,7 +19,6 @@ use App\Http\Controllers\Pelanggan\MenuController as PelangganMenu;
 use App\Http\Controllers\Pelanggan\KeranjangController;
 use App\Http\Controllers\Pelanggan\PesananController;
 
-// ── Root ──────────────────────────────────────────────────
 Route::get('/', fn() => redirect()->route('login'));
 
 // ── Auth Staff ────────────────────────────────────────────
@@ -30,7 +27,6 @@ Route::middleware('guest')->group(function () {
     Route::post('/login',   [AuthController::class, 'login']);
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register',[AuthController::class, 'register']);
-
     Route::get('/forgot-password',        [AuthController::class, 'showForgot'])->name('password.request');
     Route::post('/forgot-password',       [AuthController::class, 'sendResetLink'])->name('password.email');
     Route::get('/reset-password/{token}', [AuthController::class, 'showReset'])->name('password.reset');
@@ -54,7 +50,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::resource('menu',     MenuController::class);
     Route::resource('kategori', KategoriController::class);
     Route::resource('meja',     MejaController::class);
-    Route::post('/meja/{id}/toggle', [MejaController::class, 'toggleStatus'])->name('meja.toggle');
+    Route::post('/meja/{id}/toggle',    [MejaController::class, 'toggleStatus'])->name('meja.toggle');
+    Route::post('/meja/{id}/kosongkan', [MejaController::class, 'kosongkanMeja'])->name('meja.kosongkan');
 
     Route::get('/transaksi',                      [AdminTransaksi::class, 'index'])->name('transaksi.index');
     Route::post('/transaksi/{kd_order}/bayar',    [AdminTransaksi::class, 'bayar'])->name('transaksi.bayar');

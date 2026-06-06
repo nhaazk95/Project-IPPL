@@ -15,15 +15,16 @@ class DashboardController extends Controller
     {
         $today = Carbon::today();
 
-        $orderPending    = Order::where('status_order', 'pending')->count();
-        $orderDiproses   = Order::where('status_order', 'diproses')->count();
-        $transaksiHari   = Transaksi::whereDate('tanggal', $today)->where('user_kd', auth()->user()->kd_user)->count();
-        $pendapatanHari  = Transaksi::whereDate('tanggal', $today)->where('user_kd', auth()->user()->kd_user)->sum('total_harga');
+        $orderPending   = Order::where('status_order', 'pending')->count();
+        $orderDiproses  = Order::where('status_order', 'diproses')->count();
+        $transaksiHari  = Transaksi::whereDate('tanggal', $today)->where('user_kd', auth()->user()->kd_user)->count();
+        $pendapatanHari = Transaksi::whereDate('tanggal', $today)->where('user_kd', auth()->user()->kd_user)->sum('total_harga');
 
-        $orderTerbaru = Order::with(['meja', 'detailOrders'])
-            ->whereIn('status_order', ['pending', 'diproses'])
+        // Tampilkan semua order aktif: pending, diproses, siap (belum bayar)
+        $orderTerbaru = Order::with(['detailOrders.menu', 'transaksi'])
+            ->whereIn('status_order', ['pending', 'diproses', 'siap'])
             ->orderByDesc('waktu')
-            ->limit(10)
+            ->limit(20)
             ->get();
 
         $mejas = Meja::orderBy('no_meja')->get();
@@ -34,15 +35,11 @@ class DashboardController extends Controller
         ));
     }
 
-    /**
-     * API endpoint untuk polling notifikasi order baru (kasir bell)
-     */
     public function notifOrder(Request $request)
     {
-        $lastId    = $request->input('last_id', '');
-        $jumlah    = Order::where('status_order', 'pending')->count();
+        $lastId  = $request->input('last_id', '');
+        $jumlah  = Order::where('status_order', 'pending')->count();
 
-        // Cek order yang lebih baru dari last_id yang diketahui kasir
         $orderBaru = 0;
         if ($lastId) {
             $orderBaru = Order::where('status_order', 'pending')
@@ -51,13 +48,12 @@ class DashboardController extends Controller
         }
 
         $latestOrder = Order::where('status_order', 'pending')
-            ->orderByDesc('kd_order')
-            ->first();
+            ->orderByDesc('kd_order')->first();
 
         return response()->json([
-            'pending'      => $jumlah,
-            'new_orders'   => $orderBaru,
-            'latest_kd'    => $latestOrder?->kd_order ?? $lastId,
+            'pending'    => $jumlah,
+            'new_orders' => $orderBaru,
+            'latest_kd'  => $latestOrder?->kd_order ?? $lastId,
         ]);
     }
 }
