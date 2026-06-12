@@ -11,10 +11,10 @@ class LevelController extends Controller
 {
     public function index()
     {
-        // Load levels beserta users-nya (id, name, kd_user)
+        // Load levels beserta users-nya, urutkan berdasarkan nama level
         $levels = Level::with(['users' => function ($q) {
             $q->select('kd_user', 'name', 'level_id')->orderBy('name');
-        }])->withCount('users')->get();
+        }])->withCount('users')->orderBy('nama_level')->get();
 
         return view('admin.level.index', compact('levels'));
     }

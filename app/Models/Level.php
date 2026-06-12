@@ -21,9 +21,4 @@ class Level extends Model
     {
         return $this->hasMany(User::class, 'level_id', 'id');
     }
-
-    public function mejas()
-    {
-        return $this->hasMany(Meja::class, 'level_id', 'id');
-    }
 }

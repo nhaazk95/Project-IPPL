@@ -133,7 +133,7 @@
 
                 <div class="form-group">
                     <label class="form-label">Metode Pembayaran</label>
-                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
 
                         {{-- Cash --}}
                         <label style="cursor:pointer;">
@@ -152,16 +152,6 @@
                                 style="border-radius:10px;padding:10px 6px;text-align:center;border:2px solid var(--cream-dark);background:var(--cream);">
                                 <i class="fa-solid fa-credit-card" style="font-size:20px;color:var(--text-light);display:block;margin-bottom:4px;"></i>
                                 <span style="font-size:11px;font-weight:700;color:var(--text-mid);">Debit</span>
-                            </div>
-                        </label>
-
-                        {{-- QRIS --}}
-                        <label style="cursor:pointer;">
-                            <input type="radio" name="metode" value="qris" style="display:none;" id="radioQris">
-                            <div class="metode-btn" id="btnQris" onclick="selectMetode('qris')"
-                                style="border-radius:10px;padding:10px 6px;text-align:center;border:2px solid var(--cream-dark);background:var(--cream);">
-                                <i class="fa-solid fa-qrcode" style="font-size:20px;color:var(--text-light);display:block;margin-bottom:4px;"></i>
-                                <span style="font-size:11px;font-weight:700;color:var(--text-mid);">QRIS</span>
                             </div>
                         </label>
 
@@ -219,18 +209,18 @@
 <script>
 const GOLD_STYLE  = 'border:2px solid var(--gold);background:rgba(201,162,39,.12);';
 const PLAIN_STYLE = 'border:2px solid var(--cream-dark);background:var(--cream);';
-const metodes     = ['Cash','Debit','Qris'];
 
 function selectMetode(m) {
-    ['cash','debit','qris'].forEach(k => {
+    ['cash','debit'].forEach(k => {
         const btn = document.getElementById('btn' + k.charAt(0).toUpperCase() + k.slice(1));
+        if (!btn) return;
         const ico = btn.querySelector('i');
         const lbl = btn.querySelector('span');
         const active = k === m;
         btn.style.cssText = `border-radius:10px;padding:10px 6px;text-align:center;` +
             (active ? GOLD_STYLE : PLAIN_STYLE);
-        ico.style.color = active ? 'var(--gold-dark)' : 'var(--text-light)';
-        lbl.style.color = active ? 'var(--brown)'     : 'var(--text-mid)';
+        if (ico) ico.style.color = active ? 'var(--gold-dark)' : 'var(--text-light)';
+        if (lbl) lbl.style.color = active ? 'var(--brown)'     : 'var(--text-mid)';
         document.getElementById('radio' + k.charAt(0).toUpperCase() + k.slice(1)).checked = active;
     });
 
@@ -238,8 +228,6 @@ function selectMetode(m) {
     document.getElementById('cashSection').style.display    = isCash ? '' : 'none';
     document.getElementById('nonCashInfo').style.display    = isCash ? 'none' : '';
     document.getElementById('kembalianGroup').style.display = 'none';
-
-    // Hapus required pada jumlah_bayar jika bukan cash
     document.getElementById('fBayar').required = isCash;
 }
 

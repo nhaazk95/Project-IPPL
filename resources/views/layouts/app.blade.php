@@ -30,7 +30,14 @@
         </div>
 
         <div class="sidebar-user-info">
-            <div class="sidebar-avatar"><i class="fa-solid fa-user-tie"></i></div>
+            <div class="sidebar-avatar" style="overflow:hidden;">
+                @if(auth()->user()->foto)
+                    <img src="{{ asset('storage/' . auth()->user()->foto) }}"
+                        style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                @else
+                    <i class="fa-solid fa-user-tie"></i>
+                @endif
+            </div>
             <div class="sidebar-user-name">{{ auth()->user()->name ?? '-' }}</div>
             <div class="sidebar-user-role">{{ auth()->user()->level->nama_level ?? 'User' }}</div>
         </div>
@@ -101,7 +108,14 @@
 
         <div class="sidebar-footer">
             <div class="sidebar-user" onclick="document.getElementById('logoutModal').classList.add('active')" title="Klik untuk keluar">
-                <div class="user-avatar">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</div>
+                <div class="user-avatar" style="overflow:hidden;">
+                    @if(auth()->user()->foto)
+                        <img src="{{ asset('storage/' . auth()->user()->foto) }}"
+                            style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                    @else
+                        {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                    @endif
+                </div>
                 <div style="flex:1;min-width:0;">
                     <div class="user-name">{{ auth()->user()->name ?? '-' }}</div>
                     <div class="user-role">Klik untuk keluar</div>
@@ -128,19 +142,23 @@
                     <span>{{ now()->isoFormat('D MMM Y') }}</span>
                 </div>
 
-                {{-- Search --}}
+                {{-- Global Search --}}
                 <div class="tp-wrap" id="topbarSearchWrap">
-                    <button class="topbar-icon-btn" onclick="toggleTopbarSearch(event)" title="Cari">
+                    <button class="topbar-icon-btn" onclick="toggleTopbarSearch(event)" title="Cari halaman / menu">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
-                    <div class="topbar-search-box" id="topbarSearchBox">
+                    <div class="topbar-search-box" id="topbarSearchBox" style="width:300px;">
                         <i class="fa-solid fa-magnifying-glass" style="color:rgba(201,162,39,.6);font-size:13px;flex-shrink:0;"></i>
-                        <input type="text" id="topbarSearchInput" placeholder="Cari di halaman ini..."
-                            onkeydown="if(event.key==='Escape')closeTopbarSearch()"
-                            oninput="runTopbarSearch(this.value)">
+                        <input type="text" id="topbarSearchInput" placeholder="Cari menu / halaman..."
+                            onkeydown="handleSearchKey(event)"
+                            oninput="runGlobalSearch(this.value)" autocomplete="off">
                         <button onclick="closeTopbarSearch()" style="background:none;border:none;cursor:pointer;color:rgba(201,162,39,.5);padding:0;flex-shrink:0;">
                             <i class="fa-solid fa-xmark"></i>
                         </button>
+                    </div>
+                    <div id="searchResults" style="display:none;position:absolute;top:calc(100% + 10px);right:0;
+                        width:300px;background:#fff;border-radius:12px;box-shadow:0 8px 32px rgba(44,24,16,.18);
+                        border:1px solid var(--cream-dark);overflow:hidden;z-index:600;max-height:360px;overflow-y:auto;">
                     </div>
                 </div>
 
@@ -171,14 +189,21 @@
                     </button>
                     <div class="topbar-dropdown" id="topbarDropdown">
                         <div class="topbar-dropdown-profile">
-                            <div class="topbar-dropdown-avatar">{{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}</div>
+                            <div class="topbar-dropdown-avatar" style="overflow:hidden;padding:0;">
+                                @if(auth()->user()->foto)
+                                    <img src="{{ asset('storage/' . auth()->user()->foto) }}"
+                                        style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                                @else
+                                    {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
+                                @endif
+                            </div>
                             <div>
-                                <div class="topbar-dropdown-name">{{ auth()->user()->name ?? '-' }}</div>
+                                <div class="topbar-dropdown-name" id="dropdownName">{{ auth()->user()->name ?? '-' }}</div>
                                 <div class="topbar-dropdown-role">{{ auth()->user()->level->nama_level ?? 'User' }}</div>
                             </div>
                         </div>
                         <div class="topbar-dropdown-divider"></div>
-                        <a href="#" class="topbar-dropdown-item" onclick="showProfileModal(); return false;">
+                        <a href="#" class="topbar-dropdown-item" onclick="showProfileModal(event); return false;">
                             <i class="fa-solid fa-user-circle"></i> Profil Saya
                         </a>
                         <div class="topbar-dropdown-divider"></div>
@@ -245,99 +270,75 @@
     <div class="modal-box" style="max-width:460px;">
         <div class="modal-header">
             <span class="modal-title"><i class="fa-solid fa-user-circle" style="margin-right:8px;"></i>Profil Saya</span>
-            <button class="modal-close" onclick="document.getElementById('profileModal').classList.remove('active')"><i class="fa-solid fa-xmark"></i></button>
+            <button class="modal-close" onclick="closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
         </div>
+        <div class="modal-body" style="padding:20px 22px;">
+            <div id="profileAlert" style="display:none;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;"></div>
 
-        <form id="formProfil" enctype="multipart/form-data">
-            @csrf
-            <div class="modal-body" style="padding-top:20px;">
-
-                {{-- Avatar --}}
-                <div style="text-align:center;margin-bottom:20px;">
-                    <div style="position:relative;display:inline-block;">
-                        <div id="avatarPreview" style="width:88px;height:88px;border-radius:50%;background:var(--gold);color:var(--brown);
-                            display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;
-                            margin:0 auto;border:3px solid var(--brown);overflow:hidden;">
-                            @if(auth()->user()->foto)
-                                <img src="{{ Storage::url(auth()->user()->foto) }}" style="width:100%;height:100%;object-fit:cover;">
-                            @else
-                                {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
-                            @endif
+            {{-- Foto profil --}}
+            <div style="text-align:center;margin-bottom:20px;">
+                <div style="position:relative;display:inline-block;">
+                    @if(auth()->user()->foto)
+                        <img id="profilePreview" src="{{ asset('storage/' . auth()->user()->foto) }}"
+                            style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--brown);">
+                    @else
+                        <div id="profilePreview" style="width:80px;height:80px;border-radius:50%;background:var(--gold);color:var(--brown);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;border:3px solid var(--brown);">
+                            {{ strtoupper(substr(auth()->user()->name ?? 'U', 0, 1)) }}
                         </div>
-                        <label for="inputFoto" style="position:absolute;bottom:0;right:0;
-                            width:26px;height:26px;border-radius:50%;background:var(--brown);
-                            color:var(--gold);display:flex;align-items:center;justify-content:center;
-                            cursor:pointer;font-size:12px;border:2px solid #fff;">
-                            <i class="fa-solid fa-camera"></i>
-                        </label>
-                        <input type="file" id="inputFoto" name="foto" accept="image/*"
-                            style="display:none;" onchange="previewFoto(this)">
-                    </div>
-                    <div style="font-weight:700;font-size:16px;color:var(--text-dark);margin-top:10px;">
-                        {{ auth()->user()->name }}
-                    </div>
-                    <div style="font-size:12px;color:var(--text-light);">
-                        {{ auth()->user()->level->nama_level ?? 'User' }}
-                    </div>
+                    @endif
+                    <label for="photoInput" style="position:absolute;bottom:0;right:0;width:26px;height:26px;
+                        background:var(--brown);color:var(--gold);border-radius:50%;display:flex;
+                        align-items:center;justify-content:center;font-size:11px;cursor:pointer;border:2px solid #fff;">
+                        <i class="fa-solid fa-camera"></i>
+                    </label>
+                    <input type="file" id="photoInput" accept="image/*" style="display:none;" onchange="previewPhoto(this)">
                 </div>
+                <div style="font-weight:700;font-size:16px;color:var(--text-dark);margin-top:10px;" id="profileNameDisplay">{{ auth()->user()->name }}</div>
+                <div style="font-size:12px;color:var(--text-light);margin-top:2px;">{{ auth()->user()->level->nama_level ?? 'User' }}</div>
+            </div>
 
-                {{-- Fields --}}
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                <div class="form-group" style="margin:0;">
+                    <label class="form-label">Nama Lengkap</label>
+                    <input type="text" id="pName" class="form-control" value="{{ auth()->user()->name }}">
+                </div>
+                <div class="form-group" style="margin:0;">
+                    <label class="form-label">Username</label>
+                    <input type="text" id="pUsername" class="form-control" value="{{ auth()->user()->username }}">
+                </div>
+                <div class="form-group" style="margin:0;">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="pEmail" class="form-control" value="{{ auth()->user()->email }}">
+                </div>
+                <div class="form-group" style="margin:0;">
+                    <label class="form-label">No. HP</label>
+                    <input type="text" id="pNoHp" class="form-control" placeholder="08xx..." value="{{ auth()->user()->no_hp ?? '' }}">
+                </div>
+            </div>
+
+            <div style="border-top:1px solid var(--cream-dark);padding-top:12px;margin-bottom:4px;">
+                <div style="font-size:11.5px;font-weight:700;color:var(--text-light);margin-bottom:8px;">
+                    <i class="fa-solid fa-lock" style="margin-right:5px;"></i>
+                    Ganti Password — kosongkan jika tidak ingin mengubah
+                </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                     <div class="form-group" style="margin:0;">
-                        <label class="form-label">Nama Lengkap</label>
-                        <input type="text" name="name" class="form-control"
-                            value="{{ auth()->user()->name }}" required>
+                        <label class="form-label">Password Baru</label>
+                        <input type="password" id="pPassword" class="form-control" placeholder="Min. 6 karakter">
                     </div>
                     <div class="form-group" style="margin:0;">
-                        <label class="form-label">Username</label>
-                        <input type="text" name="username" class="form-control"
-                            value="{{ auth()->user()->username }}" required>
-                    </div>
-                    <div class="form-group" style="margin:0;">
-                        <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control"
-                            value="{{ auth()->user()->email }}" required>
-                    </div>
-                    <div class="form-group" style="margin:0;">
-                        <label class="form-label">No. HP</label>
-                        <input type="text" name="no_hp" class="form-control"
-                            value="{{ auth()->user()->no_hp }}" placeholder="08xx...">
+                        <label class="form-label">Konfirmasi Password</label>
+                        <input type="password" id="pPasswordConfirm" class="form-control" placeholder="Ulangi password">
                     </div>
                 </div>
-
-                <div style="margin-top:12px;padding-top:12px;border-top:1px dashed var(--cream-dark);">
-                    <p style="font-size:11.5px;color:var(--text-light);margin-bottom:10px;">
-                        <i class="fa-solid fa-lock" style="margin-right:4px;"></i>
-                        Ganti Password — kosongkan jika tidak ingin mengubah
-                    </p>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                        <div class="form-group" style="margin:0;">
-                            <label class="form-label">Password Baru</label>
-                            <input type="password" name="password" class="form-control"
-                                placeholder="Min. 6 karakter">
-                        </div>
-                        <div class="form-group" style="margin:0;">
-                            <label class="form-label">Konfirmasi Password</label>
-                            <input type="password" name="password_confirmation" class="form-control"
-                                placeholder="Ulangi password">
-                        </div>
-                    </div>
-                </div>
-
-                <div id="profilAlert" style="display:none;margin-top:12px;padding:10px 14px;
-                    border-radius:8px;font-size:13px;font-weight:600;"></div>
             </div>
-
-            <div class="modal-footer" style="gap:10px;">
-                <button type="button" class="btn-secondary"
-                    onclick="document.getElementById('profileModal').classList.remove('active')">
-                    Batal
-                </button>
-                <button type="button" class="btn-brown" onclick="simpanProfil()" id="btnSimpanProfil">
-                    <i class="fa-solid fa-floppy-disk"></i> Simpan
-                </button>
-            </div>
-        </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeProfileModal()">Batal</button>
+            <button class="btn-gold" onclick="saveProfile()">
+                <i class="fa-solid fa-floppy-disk"></i> Simpan
+            </button>
+        </div>
     </div>
 </div>
 
@@ -390,23 +391,72 @@ function toggleTopbarSearch(e) {
     const box = document.getElementById('topbarSearchBox');
     if (box.classList.contains('open')) { closeTopbarSearch(); }
     else {
-        // close other dropdowns
         document.getElementById('topbarDropdown')?.classList.remove('open');
         document.getElementById('bellDropdown')?.classList.remove('open');
         box.classList.add('open');
+        document.getElementById('searchResults').style.display = 'none';
         setTimeout(() => document.getElementById('topbarSearchInput')?.focus(), 150);
     }
 }
 function closeTopbarSearch() {
-    const box = document.getElementById('topbarSearchBox');
-    box?.classList.remove('open');
+    document.getElementById('topbarSearchBox')?.classList.remove('open');
+    document.getElementById('searchResults').style.display = 'none';
     const inp = document.getElementById('topbarSearchInput');
-    if (inp) { inp.value=''; runTopbarSearch(''); }
+    if (inp) inp.value = '';
 }
-function runTopbarSearch(q) {
-    document.querySelectorAll('table tbody tr').forEach(row => {
-        row.style.display = (!q || row.textContent.toLowerCase().includes(q.toLowerCase())) ? '' : 'none';
-    });
+// ─── Global Navigation Search ─────────────────────────
+@php
+$searchItems = auth()->user()?->isAdmin() ? [
+    ['label'=>'Dashboard',        'icon'=>'fa-gauge',             'url'=> route('admin.dashboard')],
+    ['label'=>'Data Menu',        'icon'=>'fa-utensils',          'url'=> route('admin.menu.index')],
+    ['label'=>'Kategori',         'icon'=>'fa-tags',              'url'=> route('admin.kategori.index')],
+    ['label'=>'Meja',             'icon'=>'fa-chair',             'url'=> route('admin.meja.index')],
+    ['label'=>'Level / Role',     'icon'=>'fa-shield-halved',     'url'=> route('admin.level.index')],
+    ['label'=>'Transaksi',        'icon'=>'fa-cash-register',     'url'=> route('admin.transaksi.index')],
+    ['label'=>'Laporan Orderan',  'icon'=>'fa-file-lines',        'url'=> route('admin.laporan.orderan')],
+    ['label'=>'Laporan Transaksi','icon'=>'fa-file-invoice-dollar','url'=> route('admin.laporan.transaksi')],
+] : [
+    ['label'=>'Dashboard',        'icon'=>'fa-gauge',             'url'=> route('kasir.dashboard')],
+    ['label'=>'Transaksi / Bayar','icon'=>'fa-cash-register',     'url'=> route('kasir.transaksi.index')],
+    ['label'=>'Kelola Order',     'icon'=>'fa-clipboard-list',    'url'=> route('kasir.order')],
+    ['label'=>'Laporan',          'icon'=>'fa-file-lines',        'url'=> route('kasir.laporan')],
+];
+@endphp
+const SEARCH_ITEMS = {!! json_encode($searchItems) !!};
+
+function runGlobalSearch(q) {
+    const res = document.getElementById('searchResults');
+    if (!q || q.length < 1) { res.style.display = 'none'; return; }
+
+    const filtered = SEARCH_ITEMS.filter(item =>
+        item.label.toLowerCase().includes(q.toLowerCase())
+    );
+
+    if (filtered.length === 0) {
+        res.innerHTML = '<div style="padding:14px 16px;font-size:13px;color:var(--text-light);text-align:center;">Tidak ditemukan</div>';
+    } else {
+        res.innerHTML = filtered.map((item, i) => `
+            <a href="${item.url}" style="display:flex;align-items:center;gap:12px;padding:11px 16px;
+                text-decoration:none;color:var(--text-dark);border-bottom:1px solid var(--cream-dark);
+                transition:background .12s;font-size:13.5px;font-weight:600;"
+                onmouseover="this.style.background='var(--cream)'" onmouseout="this.style.background=''"
+                onclick="closeTopbarSearch()">
+                <span style="width:30px;height:30px;border-radius:8px;background:var(--brown);
+                    color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">
+                    <i class="fa-solid ${item.icon}"></i>
+                </span>
+                ${item.label}
+            </a>`).join('');
+    }
+    res.style.display = 'block';
+}
+
+function handleSearchKey(e) {
+    if (e.key === 'Escape') closeTopbarSearch();
+    if (e.key === 'Enter') {
+        const first = document.querySelector('#searchResults a');
+        if (first) first.click();
+    }
 }
 
 // ─── Hamburger Dropdown ─────────────────────────────────
@@ -422,56 +472,115 @@ function toggleTopbarMenu(e) {
 function closeTopbarMenu() {
     document.getElementById('topbarDropdown')?.classList.remove('open');
 }
-function showProfileModal() {
-    closeTopbarMenu();
-    document.getElementById('profileModal').classList.add('active');
+function closeProfileModal() {
+    document.getElementById('profileModal').classList.remove('active');
+    document.getElementById('profileAlert').style.display = 'none';
 }
 
-function previewFoto(input) {
-    if (!input.files || !input.files[0]) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-        document.getElementById('avatarPreview').innerHTML =
-            `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;">`;
-    };
-    reader.readAsDataURL(input.files[0]);
+function previewPhoto(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const preview = document.getElementById('profilePreview');
+            // Replace with img if currently a div
+            if (preview.tagName === 'DIV') {
+                const img = document.createElement('img');
+                img.id = 'profilePreview';
+                img.style.cssText = 'width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--brown);';
+                preview.parentNode.replaceChild(img, preview);
+            }
+            document.getElementById('profilePreview').src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
 }
 
-function simpanProfil() {
-    const btn = document.getElementById('btnSimpanProfil');
-    const alert = document.getElementById('profilAlert');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
-    alert.style.display = 'none';
+async function saveProfile() {
+    const alertEl = document.getElementById('profileAlert');
+    alertEl.style.display = 'none';
 
-    const form = document.getElementById('formProfil');
-    const formData = new FormData(form);
+    const pw  = document.getElementById('pPassword').value;
+    const pwc = document.getElementById('pPasswordConfirm').value;
+    if (pw && pw !== pwc) {
+        alertEl.textContent = '✗ Konfirmasi password tidak cocok.';
+        alertEl.style.cssText = 'display:block;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;background:#fde8e8;color:var(--danger);border:1px solid #f5c6c6;';
+        return;
+    }
 
-    fetch('{{ route("profil.update") }}', {
-        method: 'POST',
-        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-        body: formData,
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            alert.style.cssText = 'display:block;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;background:rgba(26,122,74,.1);border:1px solid var(--success);color:var(--success);';
-            alert.textContent = '✓ ' + data.message;
-            setTimeout(() => window.location.reload(), 1200);
-        } else {
-            const errors = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Terjadi kesalahan.');
-            alert.style.cssText = 'display:block;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;background:#fde8e8;border:1px solid var(--danger);color:var(--danger);';
-            alert.textContent = '✗ ' + errors;
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan';
+    const fd = new FormData();
+    fd.append('_method', 'POST');
+    fd.append('name',     document.getElementById('pName').value);
+    fd.append('username', document.getElementById('pUsername').value);
+    fd.append('email',    document.getElementById('pEmail').value);
+    fd.append('no_hp',    document.getElementById('pNoHp').value);
+    if (pw) { fd.append('password', pw); fd.append('password_confirmation', pwc); }
+    const photoFile = document.getElementById('photoInput').files[0];
+    if (photoFile) fd.append('photo', photoFile);
+    fd.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+
+    try {
+        const resp = await fetch('{{ route("profil.update") }}', { method:'POST', body: fd });
+        const data = await resp.json();
+
+        if (resp.status === 422) {
+            // Validation errors dari Laravel
+            const errors = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Validasi gagal.');
+            alertEl.textContent = '✗ ' + errors;
+            alertEl.style.cssText = 'display:block;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;background:#fde8e8;color:var(--danger);border:1px solid #f5c6c6;';
+            return;
         }
-    })
-    .catch(() => {
-        alert.style.cssText = 'display:block;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:600;background:#fde8e8;border:1px solid var(--danger);color:var(--danger);';
-        alert.textContent = '✗ Terjadi kesalahan. Coba lagi.';
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Simpan';
-    });
+
+        if (data.success) {
+            alertEl.textContent = '✓ ' + data.message;
+            alertEl.style.cssText = 'display:block;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;background:#e6f7ee;color:var(--success);border:1px solid #b7e4c7;';
+            if (data.name) updateSidebarName(data.name);
+            if (data.photo_url) updateSidebarPhoto(data.photo_url);
+            document.getElementById('pPassword').value = '';
+            document.getElementById('pPasswordConfirm').value = '';
+            document.getElementById('photoInput').value = '';
+            showToast('Profil berhasil diperbarui!');
+        } else {
+            alertEl.textContent = '✗ ' + (data.message || 'Terjadi kesalahan.');
+            alertEl.style.cssText = 'display:block;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;background:#fde8e8;color:var(--danger);border:1px solid #f5c6c6;';
+        }
+    } catch(e) {
+        alertEl.textContent = '✗ Terjadi kesalahan. Coba lagi.';
+        alertEl.style.cssText = 'display:block;padding:9px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;background:#fde8e8;color:var(--danger);border:1px solid #f5c6c6;';
+    }
+}
+
+function updateSidebarPhoto(url) {
+    const imgTag = `<img src="${url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+
+    // Sidebar avatar (tengah)
+    const sidebarAvatar = document.querySelector('.sidebar-avatar');
+    if (sidebarAvatar) { sidebarAvatar.style.padding = '0'; sidebarAvatar.innerHTML = imgTag; }
+
+    // Sidebar footer avatar (bawah kiri)
+    const footerAvatar = document.querySelector('.user-avatar');
+    if (footerAvatar) { footerAvatar.style.padding = '0'; footerAvatar.innerHTML = imgTag; }
+
+    // Dropdown topbar avatar (kanan atas)
+    const dropdownAvatar = document.querySelector('.topbar-dropdown-avatar');
+    if (dropdownAvatar) { dropdownAvatar.style.padding = '0'; dropdownAvatar.innerHTML = imgTag; }
+}
+
+function updateSidebarName(name) {
+    const els = [
+        document.querySelector('.sidebar-user-name'),
+        document.querySelector('.user-name'),
+        document.getElementById('dropdownName'),
+        document.getElementById('profileNameDisplay'),
+    ];
+    els.forEach(el => { if (el) el.textContent = name; });
+}
+
+function showProfileModal(e) {
+    e && e.stopPropagation();
+    closeTopbarMenu();
+    setTimeout(() => {
+        document.getElementById('profileModal').classList.add('active');
+    }, 50);
 }
 
 // Close on outside click
@@ -481,7 +590,8 @@ document.addEventListener('click', function(e) {
     if (!document.getElementById('bellWrap')?.contains(e.target))
         document.getElementById('bellDropdown')?.classList.remove('open');
     if (!document.getElementById('topbarSearchWrap')?.contains(e.target)) {
-        // intentionally don't auto-close search
+        document.getElementById('topbarSearchBox')?.classList.remove('open');
+        document.getElementById('searchResults').style.display = 'none';
     }
 });
 

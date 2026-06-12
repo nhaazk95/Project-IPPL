@@ -128,20 +128,21 @@
                 <i class="fa-solid fa-print"></i> Cetak Struk
             </a>
         @elseif($order->status_order === 'siap' || $order->status_order === 'pending')
-            {{-- Tombol utama ke detail --}}
-            <a href="{{ route('kasir.order.detail', $order->kd_order) }}" class="btn-gold btn-sm">
-                <i class="fa-solid fa-cash-register"></i> Proses Bayar
-            </a>
-            {{-- Shortcut QRIS: konfirmasi langsung dari dashboard --}}
             @if($isQris)
+            {{-- QRIS: konfirmasi langsung dari dashboard --}}
             <form method="POST" action="{{ route('kasir.proses-bayar', $order->kd_order) }}" style="margin:0;"
                 onsubmit="return confirm('Konfirmasi pembayaran QRIS untuk order ini?')">
                 @csrf
                 <input type="hidden" name="metode" value="qris">
-                <button type="submit" class="btn-gold btn-sm" style="background:rgba(30,100,200,.15);color:#1d4ed8;border:1.5px solid rgba(30,100,200,.3);">
+                <button type="submit" class="btn-gold btn-sm">
                     <i class="fa-solid fa-qrcode"></i> Konfirmasi QRIS
                 </button>
             </form>
+            @else
+            {{-- Kasir: ke halaman detail untuk proses bayar --}}
+            <a href="{{ route('kasir.order.detail', $order->kd_order) }}" class="btn-gold btn-sm">
+                <i class="fa-solid fa-cash-register"></i> Konfirmasi
+            </a>
             @endif
         @elseif($order->status_order === 'diproses')
             <a href="{{ route('kasir.order.detail', $order->kd_order) }}" class="btn-secondary btn-sm">

@@ -184,68 +184,84 @@
                     <span class="amount">Rp {{ number_format($total, 0, ',', '.') }}</span>
                 </div>
 
-                {{-- NOTA — hanya muncul setelah selesai, tampilan sama seperti struk kasir --}}
+                {{-- NOTA — hanya muncul setelah selesai --}}
                 @if($trx)
-                <div style="background:#2c1810;border-radius:14px;overflow:hidden;margin-top:.85rem;">
-                    {{-- Header struk --}}
-                    <div style="padding:16px 16px 14px;text-align:center;border-bottom:1.5px dashed rgba(201,162,39,.25);">
-                        <div style="font-size:22px;margin-bottom:4px;">☕</div>
-                        <div style="font-family:'Playfair Display',serif;font-size:15px;font-weight:800;color:#c9a227;letter-spacing:2px;">DAPUR NUSANTARA</div>
-                        <div style="font-size:10px;color:rgba(201,162,39,.5);margin-top:2px;">Cita Rasa Terbaik untuk Kamu</div>
-                    </div>
+                @php $m = $trx->metode ?? 'cash'; @endphp
+                <div style="background:#fff;border-radius:14px;border:1.5px solid #e8ddd0;overflow:hidden;margin-top:.85rem;box-shadow:0 2px 12px rgba(44,24,16,.08);">
 
-                    {{-- Info transaksi --}}
-                    <div style="padding:12px 16px;">
-                        @php
-                            $m = $trx->metode ?? 'cash';
-                            $mLabel = match($m) { 'qris'=>'QRIS', 'debit'=>'Debit/Kartu', default=>'Tunai' };
-                            $mIcon  = match($m) { 'qris'=>'📱', 'debit'=>'💳', default=>'💵' };
-                        @endphp
-                        <div style="display:flex;justify-content:space-between;font-size:11.5px;color:rgba(245,233,192,.6);padding:2px 0;">
+                    {{-- Info --}}
+                    <div style="padding:14px 16px 0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#7a6552;padding:4px 0;border-bottom:1px solid #f5ece0;">
                             <span>No. Transaksi</span>
-                            <span style="color:var(--emas);font-weight:700;font-size:10.5px;font-family:monospace;">{{ $trx->kd_transaksi }}</span>
+                            <strong style="color:#2c1810;font-family:monospace;font-size:10.5px;">{{ $trx->kd_transaksi }}</strong>
                         </div>
-                        <div style="display:flex;justify-content:space-between;font-size:11.5px;color:rgba(245,233,192,.6);padding:2px 0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#7a6552;padding:4px 0;border-bottom:1px solid #f5ece0;">
                             <span>Tanggal</span>
-                            <span style="color:rgba(245,233,192,.9);font-weight:600;">{{ \Carbon\Carbon::parse($trx->tanggal)->format('d/m/Y') }}</span>
+                            <strong style="color:#2c1810;">{{ \Carbon\Carbon::parse($trx->tanggal)->format('d/m/Y') }}</strong>
                         </div>
-                        <div style="display:flex;justify-content:space-between;font-size:11.5px;color:rgba(245,233,192,.6);padding:2px 0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#7a6552;padding:4px 0;border-bottom:1px solid #f5ece0;">
                             <span>Waktu</span>
-                            <span style="color:rgba(245,233,192,.9);font-weight:600;">{{ \Carbon\Carbon::parse($trx->waktu)->format('H:i') }}</span>
+                            <strong style="color:#2c1810;">{{ \Carbon\Carbon::parse($trx->waktu)->format('H:i') }}</strong>
                         </div>
-                        <div style="display:flex;justify-content:space-between;font-size:11.5px;color:rgba(245,233,192,.6);padding:2px 0;">
-                            <span>Meja</span>
-                            <span style="color:rgba(245,233,192,.9);font-weight:600;">{{ $order->no_meja }}</span>
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#7a6552;padding:4px 0;border-bottom:1px solid #f5ece0;">
+                            <span>No. Meja</span>
+                            <strong style="color:#2c1810;">{{ $order->no_meja }}</strong>
                         </div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:rgba(245,233,192,.6);padding:2px 0;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#7a6552;padding:4px 0;">
                             <span>Metode Bayar</span>
-                            <span style="background:rgba(201,162,39,.15);color:var(--emas);border-radius:20px;padding:2px 9px;font-size:10.5px;font-weight:700;">
-                                {{ $mIcon }} {{ $mLabel }}
+                            @php
+                                $mStyle = match($m) {
+                                    'qris'  => 'background:rgba(30,100,200,.1);color:#1d4ed8;border:1px solid rgba(30,100,200,.2)',
+                                    'debit' => 'background:rgba(124,58,237,.1);color:#6d28d9;border:1px solid rgba(124,58,237,.2)',
+                                    default => 'background:rgba(26,122,74,.1);color:#1a7a4a;border:1px solid rgba(26,122,74,.2)',
+                                };
+                                $mLabel = match($m) { 'qris'=>'📱 QRIS', 'debit'=>'💳 Debit/Kartu', default=>'💵 Tunai' };
+                            @endphp
+                            <span style="display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;{{ $mStyle }}">
+                                {{ $mLabel }}
                             </span>
                         </div>
+                    </div>
 
-                        <div style="border-top:1.5px dashed rgba(201,162,39,.2);margin:.6rem 0;"></div>
+                    <div style="border-top:1.5px dashed #e0d5c5;margin:.65rem 16px;"></div>
 
-                        {{-- Item --}}
+                    {{-- Items --}}
+                    <div style="padding:0 16px;">
                         @foreach($order->detailOrders as $item)
-                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(201,162,39,.08);">
-                            <span style="color:rgba(245,233,192,.8);">{{ $item->menu->name_menu ?? '-' }}</span>
-                            <span style="color:rgba(245,233,192,.5);margin:0 8px;">×{{ $item->total }}</span>
-                            <span style="color:var(--emas);font-weight:600;">Rp {{ number_format($item->sub_total, 0, ',', '.') }}</span>
+                        <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:5px 0;border-bottom:1px solid #f5ece0;gap:8px;">
+                            <span style="font-weight:600;color:#2c1810;flex:1;">{{ $item->menu->name_menu ?? '-' }}</span>
+                            <span style="color:#7a6552;">×{{ $item->total }}</span>
+                            <span style="font-weight:700;color:#2c1810;">Rp {{ number_format($item->sub_total, 0, ',', '.') }}</span>
                         </div>
                         @endforeach
+                    </div>
 
-                        <div style="border-top:2px solid rgba(201,162,39,.35);margin:.6rem 0;"></div>
-                        <div style="display:flex;justify-content:space-between;align-items:center;">
-                            <span style="font-size:13px;font-weight:800;color:rgba(245,233,192,.9);">TOTAL</span>
-                            <span style="font-size:17px;font-weight:800;color:var(--emas);">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                    <div style="border-top:1.5px dashed #e0d5c5;margin:.65rem 16px 0;"></div>
+
+                    {{-- Total --}}
+                    <div style="padding:0 16px;">
+                        <div style="display:flex;justify-content:space-between;font-size:12px;color:#7a6552;padding:3px 0;">
+                            <span>Subtotal</span><span>Rp {{ number_format($total, 0, ',', '.') }}</span>
                         </div>
+                        <div style="display:flex;justify-content:space-between;font-size:12px;color:#7a6552;padding:3px 0;">
+                            <span>Pajak</span><span>Rp 0</span>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0 0;margin-top:6px;border-top:2.5px solid #2c1810;">
+                            <span style="font-size:13px;font-weight:800;color:#2c1810;">TOTAL</span>
+                            <span style="font-size:18px;font-weight:800;color:#c9a227;">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                        </div>
+                    </div>
+
+                    {{-- Konfirmasi metode --}}
+                    <div style="margin:.75rem 16px 0;background:#faf5ee;border-radius:10px;padding:9px 12px;border:1.5px solid #e0d5c5;text-align:center;font-size:12.5px;font-weight:700;color:{{ $m==='qris'?'#1d4ed8':($m==='debit'?'#6d28d9':'#1a7a4a') }};">
+                        ✅ Pembayaran {{ $mLabel }} Terkonfirmasi
                     </div>
 
                     {{-- Footer --}}
-                    <div style="background:rgba(0,0,0,.2);border-top:1.5px dashed rgba(201,162,39,.2);padding:12px 16px;text-align:center;">
-                        <div style="font-size:12px;font-weight:700;color:rgba(245,233,192,.85);margin-bottom:3px;">Terima kasih sudah berkunjung! 🙏</div>
-                        <div style="font-size:10.5px;color:rgba(245,233,192,.4);line-height:1.7;">Semoga harimu menyenangkan<br>Sampai jumpa kembali di Dapur Nusantara</div>
+                    <div style="padding:12px 16px 14px;text-align:center;border-top:1.5px dashed #e0d5c5;margin-top:.75rem;">
+                        <div style="font-size:12.5px;font-weight:700;color:#2c1810;margin-bottom:3px;">Terima kasih sudah berkunjung! 🙏</div>
+                        <div style="font-size:11px;color:#7a6552;line-height:1.7;">Semoga harimu menyenangkan<br>Sampai jumpa kembali di Dapur Nusantara</div>
+                        <div style="font-family:monospace;font-size:9.5px;color:#b0a090;margin-top:6px;">{{ $trx->kd_transaksi }}</div>
                     </div>
                 </div>
                 @endif

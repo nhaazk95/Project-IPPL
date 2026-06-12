@@ -18,51 +18,17 @@ class User extends Authenticatable
     protected $keyType = 'string';
 
     protected $fillable = [
-    'kd_user',
-    'name',
-    'email',
-    'username',
-    'password',
-    'level_id',
-    'foto',
-    'no_hp',
+        'kd_user', 'name', 'email', 'username',
+        'password', 'level_id', 'foto', 'no_hp',
     ];
 
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $hidden = ['password', 'remember_token'];
 
-    protected $casts = [
-        'level_id' => 'integer',
-    ];
+    protected $casts = ['level_id' => 'integer'];
 
-    public function level()
-    {
-        return $this->belongsTo(Level::class, 'level_id', 'id');
-    }
-
-    public function mejas()
-    {
-        return $this->hasMany(Meja::class, 'user_kd', 'kd_user');
-    }
-
-    public function orders()
-    {
-        return $this->hasMany(Order::class, 'user_kd', 'kd_user');
-    }
-
-    public function transaksis()
-    {
-        return $this->hasMany(Transaksi::class, 'user_kd', 'kd_user');
-    }
-
-    public function detailOrderTemporaries()
-    {
-        return $this->hasMany(DetailOrderTemporary::class, 'user_kd', 'kd_user');
-    }
-
-    // ==================== METHODS ====================
+    public function level()        { return $this->belongsTo(Level::class, 'level_id', 'id'); }
+    public function orders()       { return $this->hasMany(Order::class, 'user_kd', 'kd_user'); }
+    public function transaksis()   { return $this->hasMany(Transaksi::class, 'user_kd', 'kd_user'); }
 
     public function login(string $username, string $password): bool
     {
@@ -74,32 +40,14 @@ class User extends Authenticatable
         return false;
     }
 
-    public function logout(): void
-    {
-        Auth::logout();
-    }
+    public function isAdmin(): bool { return strtolower($this->level->nama_level ?? '') === 'admin'; }
+    public function isKasir(): bool { return strtolower($this->level->nama_level ?? '') === 'kasir'; }
 
-    public function register(array $data): void
+    public function getPhotoUrlAttribute(): string
     {
-        $data['password'] = Hash::make($data['password']);
-        self::create($data);
+        if ($this->photo) {
+            return asset('storage/' . $this->photo);
+        }
+        return '';
     }
-
-    public function changePassword(string $newPassword): void
-    {
-        $this->password = Hash::make($newPassword);
-        $this->save();
-    }
-
-    public function isAdmin(): bool
-    {
-        return strtolower($this->level->nama_level ?? '') === 'admin';
-    }
-
-    public function isKasir(): bool
-    {
-        return strtolower($this->level->nama_level ?? '') === 'kasir';
-    }
-
-    
 }

@@ -40,10 +40,9 @@
         </div>
     </div>
 
-    {{-- Hint --}}
+    {{-- Hint (diubah) --}}
     <div style="padding:10px 20px 0;font-size:11.5px;color:var(--text-light);display:flex;align-items:center;gap:6px;">
-        <i class="fa-solid fa-circle-info" style="color:var(--gold-dark);"></i>
-        Klik meja untuk ubah status · Tahan untuk edit / hapus meja
+        <i class="fa-solid fa-pen"></i> Hover lalu klik <strong>✏️</strong> untuk edit / hapus meja
     </div>
 
     <div class="card-body" style="padding:20px;">
@@ -62,7 +61,13 @@
                 data-status="{{ $meja->status }}"
                 data-pelanggan-nama="{{ $pelangganAktif?->name_pelanggan ?? '' }}"
                 data-login-at="{{ $pelangganAktif?->login_at ? \Carbon\Carbon::parse($pelangganAktif->login_at)->format('H:i') : '' }}"
-                title="Klik untuk ubah status · Tahan untuk edit">
+                style="cursor:default;">  {{-- cursor default, bukan pointer --}}
+
+                {{-- Tombol edit pensil --}}
+                <button class="meja-edit-btn" onclick="event.stopPropagation(); editMeja(this.parentElement)" title="Edit meja">
+                    <i class="fa-solid fa-pen"></i>
+                </button>
+
                 <div class="meja-chair">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M6 2a2 2 0 0 0-2 2v5H3a1 1 0 0 0-1 1v3a3 3 0 0 0 3 3h1v3a1 1 0 0 0 2 0v-3h8v3a1 1 0 0 0 2 0v-3h1a3 3 0 0 0 3-3V10a1 1 0 0 0-1-1h-1V4a2 2 0 0 0-2-2H6z"/>
@@ -149,58 +154,61 @@
     </div>
 </div>
 
-{{-- EDIT MODAL --}}
+{{-- EDIT MODAL (dengan status) --}}
 <div class="modal-backdrop" id="editModal">
-    <div class="modal-box" style="max-width:360px;">
+    <div class="modal-box" style="max-width:400px;">
         <div class="modal-header">
-            <span class="modal-title"><i class="fa-solid fa-pen-to-square" style="margin-right:7px;"></i>Edit Meja <span id="editMejaTitle"></span></span>
+            <span class="modal-title"><i class="fa-solid fa-chair" style="margin-right:7px;"></i>Edit Meja <span id="editMejaTitle"></span></span>
             <button class="modal-close" onclick="closeModal('editModal')"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <form method="POST" id="editForm">
-            @csrf @method('PUT')
-            <div class="modal-body">
-                {{-- Info pelanggan aktif jika meja terisi --}}
-                <div id="infoTerisi" style="display:none;background:rgba(201,162,39,.1);
-                    border:1.5px solid rgba(201,162,39,.3);border-radius:10px;
-                    padding:10px 13px;margin-bottom:14px;font-size:12.5px;color:var(--brown);">
-                    <div style="display:flex;align-items:center;justify-content:space-between;">
-                        <span><i class="fa-solid fa-user" style="margin-right:6px;color:var(--gold-dark);"></i>
-                            <strong id="infoPelangganNama">—</strong></span>
-                        <span style="font-size:11px;color:var(--text-light);" id="infoPelangganLogin"></span>
-                    </div>
-                    <form method="POST" id="kosongkanForm" style="margin-top:10px;">
-                        @csrf
-                        <button type="submit" class="btn-kosongkan"
-                            onclick="return confirm('Paksa kosongkan meja ini?\nPelanggan akan otomatis keluar.')">
-                            <i class="fa-solid fa-right-from-bracket"></i> Kosongkan Meja (Force Logout)
-                        </button>
-                    </form>
+        <div class="modal-body">
+            {{-- Info pelanggan jika meja terisi --}}
+            <div id="infoTerisi" style="display:none;background:rgba(201,162,39,.08);
+                border:1.5px solid rgba(201,162,39,.3);border-radius:10px;
+                padding:10px 13px;margin-bottom:14px;font-size:12.5px;color:var(--brown);">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span><i class="fa-solid fa-user" style="margin-right:6px;color:var(--gold-dark);"></i>
+                        <strong id="infoPelangganNama">—</strong></span>
+                    <span style="font-size:11px;color:var(--text-light);" id="infoPelangganLogin"></span>
                 </div>
+                <form method="POST" id="kosongkanForm" style="margin-top:10px;">
+                    @csrf
+                    <button type="submit" class="btn-kosongkan w-100"
+                        onclick="return confirm('Paksa kosongkan meja ini?\nPelanggan akan otomatis keluar.')">
+                        <i class="fa-solid fa-right-from-bracket"></i> Kosongkan Meja (Force Logout)
+                    </button>
+                </form>
+            </div>
 
+            <form method="POST" id="editForm">
+                @csrf @method('PUT')
                 <div class="form-group">
                     <label class="form-label">Nomor Meja</label>
                     <input type="number" name="no_meja" id="eNoMeja" class="form-control" min="1" required>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label">Status</label>
-                    <select name="status" id="eStatus" class="form-control">
+                    <select name="status" id="eStatus" class="form-control" required>
                         <option value="tersedia">Tersedia</option>
                         <option value="terisi">Terisi</option>
                     </select>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <form method="POST" id="deleteForm" style="margin:0;">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="btn-danger"
-                        onclick="return confirm('Hapus meja ini?')">
-                        <i class="fa-solid fa-trash"></i> Hapus
-                    </button>
-                </form>
+            </form>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between;">
+            <form method="POST" id="deleteForm" style="margin:0;">
+                @csrf @method('DELETE')
+                <button type="submit" class="btn-danger" onclick="return confirm('Hapus meja ini?')">
+                    <i class="fa-solid fa-trash"></i> Hapus
+                </button>
+            </form>
+            <div style="display:flex;gap:8px;">
                 <button type="button" class="btn-secondary" onclick="closeModal('editModal')">Batal</button>
-                <button type="submit" form="editForm" class="btn-gold"><i class="fa-solid fa-floppy-disk"></i> Simpan</button>
+                <button type="submit" form="editForm" class="btn-gold">
+                    <i class="fa-solid fa-floppy-disk"></i> Simpan
+                </button>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
@@ -208,7 +216,7 @@
 
 @push('styles')
 <style>
-/* Grid meja */
+/* Grid meja (sama persis seperti sebelumnya) */
 .meja-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
@@ -218,12 +226,10 @@
     border-radius: 12px;
     padding: 10px 6px 8px;
     text-align: center;
-    cursor: pointer;
     transition: all .18s;
     user-select: none;
     position: relative;
 }
-.meja-box:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(44,24,16,.12); }
 .meja-box.tersedia {
     background: rgba(26,122,74,.07);
     border: 1.5px solid rgba(26,122,74,.3);
@@ -232,41 +238,47 @@
     background: rgba(201,162,39,.1);
     border: 1.5px solid rgba(201,162,39,.4);
 }
-/* Animasi saat toggle */
-.meja-box.toggling {
-    transform: scale(.93);
-    opacity: .7;
-}
-/* Loading spinner di atas meja */
-.meja-box.loading::after {
-    content: '';
+.meja-box:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(44,24,16,.12); }
+
+.meja-chair svg { width: 22px; height: 22px; }
+.meja-box.tersedia .meja-chair svg { color: #1a7a4a; }
+.meja-box.terisi .meja-chair svg { color: #a07d1a; }
+
+.meja-num { font-weight: 800; font-size: 13px; line-height: 1; margin-top: 2px; }
+.meja-box.tersedia .meja-num { color: #1a7a4a; }
+.meja-box.terisi .meja-num { color: #a07d1a; }
+
+.meja-lbl { font-size: 9.5px; font-weight: 600; margin-top: 2px; }
+.meja-box.tersedia .meja-lbl { color: rgba(26,122,74,.7); }
+.meja-box.terisi .meja-lbl { color: rgba(160,125,26,.8); }
+
+/* Tombol edit kecil di pojok meja */
+.meja-edit-btn {
     position: absolute;
-    inset: 0;
-    border-radius: 11px;
-    background: rgba(255,255,255,.55);
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(44,24,16,.6);
+    color: #fff;
+    border: none;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 0;
+    transition: opacity .15s;
+    z-index: 2;
+    font-size: 10px;
 }
-
-.meja-chair {
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 4px;
-}
-.meja-chair svg { width: 22px; height: 22px; }
-.meja-box.tersedia .meja-chair { color: #1a7a4a; }
-.meja-box.terisi  .meja-chair  { color: #a07d1a; }
-.meja-num { font-weight: 800; font-size: 13px; line-height: 1; }
-.meja-box.tersedia .meja-num { color: #1a7a4a; }
-.meja-box.terisi  .meja-num  { color: #a07d1a; }
-.meja-lbl { font-size: 9.5px; font-weight: 600; margin-top: 2px; }
-.meja-box.tersedia .meja-lbl { color: rgba(26,122,74,.7); }
-.meja-box.terisi  .meja-lbl  { color: rgba(160,125,26,.8); }
+.meja-box:hover .meja-edit-btn { opacity: 1; }
+.meja-edit-btn:hover { background: var(--brown); color: var(--gold); }
 
 /* Toast */
 .meja-toast {
     position: fixed;
-    bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px);
+    bottom: 28px; left: 50%; transform: translateX(-50%);
     background: var(--brown);
     color: var(--gold);
     padding: 10px 22px;
@@ -275,28 +287,28 @@
     box-shadow: 0 4px 20px rgba(0,0,0,.18);
     opacity: 0;
     pointer-events: none;
-    transition: opacity .25s, transform .25s;
+    transition: opacity .25s;
     z-index: 9999;
     white-space: nowrap;
 }
-.meja-toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-}
+.meja-toast.show { opacity: 1; }
 
 /* Tombol kosongkan meja */
 .btn-kosongkan {
     display: inline-flex; align-items: center; gap: 6px;
-    width: 100%; padding: 7px 12px; border-radius: 8px;
+    padding: 7px 12px; border-radius: 8px;
     font-size: 12px; font-weight: 700;
     background: #fde8e8; border: 1.5px solid #f5c6c6;
-    color: var(--danger); cursor: pointer; transition: var(--transition);
-    font-family: inherit; justify-content: center;
+    color: var(--danger); cursor: pointer;
+    transition: var(--transition);
+    font-family: inherit;
+    justify-content: center;
 }
 .btn-kosongkan:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+.w-100 { width: 100%; }
 
 /* Pagination */
-.meja-pg-btn {
+.meja-pg-btn, .meja-pg-num {
     display: inline-flex; align-items: center;
     padding: 7px 16px; border-radius: 9px;
     font-size: 12.5px; font-weight: 600;
@@ -305,44 +317,78 @@
     text-decoration: none; cursor: pointer;
     transition: all .18s;
 }
-.meja-pg-btn:hover:not(.disabled) {
+.meja-pg-btn:hover:not(.disabled), .meja-pg-num:hover {
     background: var(--brown); color: var(--gold); border-color: var(--brown);
 }
 .meja-pg-btn.disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
-.meja-pg-num {
-    display: inline-flex; align-items: center; justify-content: center;
-    min-width: 34px; height: 34px; border-radius: 9px;
-    font-size: 13px; font-weight: 700;
-    border: 1.5px solid var(--cream-dark);
-    background: #fff; color: var(--text-mid);
-    text-decoration: none; transition: all .18s;
-}
-.meja-pg-num:hover { background: var(--cream-dark); }
 .meja-pg-num.active { background: var(--brown); color: var(--gold); border-color: var(--brown); }
 .meja-pg-ellipsis { font-size: 13px; color: var(--text-light); padding: 0 2px; }
+
+/* Modal */
+.modal-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: rgba(44,24,16,.5);
+    z-index: 1000; align-items: center; justify-content: center;
+    padding: 20px;
+}
+.modal-backdrop.active { display: flex; }
+.modal-box {
+    background: #fff; border-radius: 18px;
+    width: 100%; max-width: 400px;
+    box-shadow: 0 20px 60px rgba(44,24,16,.25);
+    overflow: hidden;
+}
+.modal-header {
+    background: var(--brown); color: var(--gold);
+    padding: 14px 20px; display: flex;
+    align-items: center; justify-content: space-between;
+}
+.modal-title { font-weight: 700; font-size: 14px; }
+.modal-close { background: none; border: none; color: rgba(201,162,39,.6); font-size: 16px; cursor: pointer; }
+.modal-close:hover { color: var(--gold); }
+.modal-body { padding: 20px 22px; }
+.modal-footer {
+    padding: 12px 22px; display: flex;
+    justify-content: space-between; gap: 10px;
+    border-top: 1px solid var(--cream-dark);
+}
+.btn-secondary, .btn-gold, .btn-danger {
+    padding: 8px 18px; border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+    border: none;
+}
+.btn-secondary { background: var(--cream-dark); color: var(--text-mid); border: 1px solid var(--cream-mid); }
+.btn-gold { background: var(--gold); color: var(--brown); }
+.btn-danger { background: #fde8e8; color: var(--danger); border: 1.5px solid #f5c6c6; }
 </style>
 @endpush
 
 @push('scripts')
 <script>
-// ── Modal helpers ─────────────────────────────────────────
-function openModal(id)  { document.getElementById(id).classList.add('active'); }
+// Modal helpers
+function openModal(id) { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-// ── Edit modal (buka via long-press / klik kanan) ─────────
-function editMeja(m) {
-    document.getElementById('eNoMeja').value  = m.no_meja;
-    document.getElementById('eStatus').value  = m.status;
-    document.getElementById('editMejaTitle').textContent = '— Meja ' + m.no_meja;
-    document.getElementById('editForm').action   = '/admin/meja/' + m.id;
-    document.getElementById('deleteForm').action = '/admin/meja/' + m.id;
-    document.getElementById('kosongkanForm').action = '/admin/meja/' + m.id + '/kosongkan';
+// Edit meja (dipanggil dari tombol pensil)
+function editMeja(box) {
+    const id = box.dataset.id;
+    const no_meja = box.dataset.no;
+    const status = box.dataset.status;
+    const pelangganNama = box.dataset.pelangganNama || '';
+    const loginAt = box.dataset.loginAt || '';
 
-    // Tampilkan info pelanggan aktif jika meja terisi
+    document.getElementById('eNoMeja').value = no_meja;
+    document.getElementById('eStatus').value = status;
+    document.getElementById('editMejaTitle').textContent = '— Meja ' + no_meja;
+    document.getElementById('editForm').action = `/admin/meja/${id}`;
+    document.getElementById('deleteForm').action = `/admin/meja/${id}`;
+    document.getElementById('kosongkanForm').action = `/admin/meja/${id}/kosongkan`;
+
     const infoBox = document.getElementById('infoTerisi');
-    if (m.status === 'terisi') {
-        document.getElementById('infoPelangganNama').textContent = m.pelanggan_nama || 'Ada pelanggan';
-        document.getElementById('infoPelangganLogin').textContent = m.login_at ? 'Login: ' + m.login_at : '';
+    if (status === 'terisi') {
+        document.getElementById('infoPelangganNama').textContent = pelangganNama || 'Ada pelanggan';
+        document.getElementById('infoPelangganLogin').textContent = loginAt ? 'Login: ' + loginAt : '';
         infoBox.style.display = 'block';
     } else {
         infoBox.style.display = 'none';
@@ -351,7 +397,7 @@ function editMeja(m) {
     openModal('editModal');
 }
 
-// ── Toast ──────────────────────────────────────────────────
+// Toast
 let toastTimer;
 function showToast(msg) {
     const t = document.getElementById('mejaToast');
@@ -360,127 +406,5 @@ function showToast(msg) {
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
 }
-
-// ── Update stat counter di header ─────────────────────────
-function updateStats(newStatus) {
-    const elTersedia = document.getElementById('statTersedia');
-    const elTerisi   = document.getElementById('statTerisi');
-    let tersedia = parseInt(elTersedia.textContent);
-    let terisi   = parseInt(elTerisi.textContent);
-
-    if (newStatus === 'terisi') { tersedia--; terisi++; }
-    else                        { tersedia++; terisi--; }
-
-    elTersedia.textContent = tersedia + ' tersedia';
-    elTerisi.textContent   = terisi   + ' terisi';
-}
-
-// ── Toggle status via AJAX ────────────────────────────────
-function toggleMeja(box) {
-    if (box.classList.contains('loading')) return;
-
-    const id     = box.dataset.id;
-    const noMeja = box.dataset.no;
-
-    box.classList.add('loading', 'toggling');
-
-    fetch(`/admin/meja/${id}/toggle`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-        },
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (!data.success) throw new Error('Gagal');
-
-        const newStatus = data.status;
-        const isTerisi  = newStatus === 'terisi';
-
-        // Update class & data
-        box.classList.remove('tersedia', 'terisi');
-        box.classList.add(newStatus);
-        box.dataset.status = newStatus;
-
-        // Update label
-        box.querySelector('.meja-lbl').textContent = isTerisi ? 'Terisi' : 'Kosong';
-
-        // Update stat header
-        updateStats(newStatus);
-
-        // Toast
-        const icon = isTerisi ? '🔴' : '🟢';
-        showToast(`${icon} Meja ${noMeja} → ${isTerisi ? 'Terisi' : 'Tersedia'}`);
-    })
-    .catch(() => {
-        showToast('⚠️ Gagal mengubah status meja');
-    })
-    .finally(() => {
-        box.classList.remove('loading', 'toggling');
-    });
-}
-
-// ── Bind events: klik = toggle, tahan = edit ─────────────
-document.querySelectorAll('.meja-box').forEach(box => {
-    let pressTimer = null;
-    let moved = false;
-
-    // Long press (tahan ~600ms) → buka modal edit
-    box.addEventListener('mousedown', () => {
-        moved = false;
-        pressTimer = setTimeout(() => {
-            pressTimer = null;
-            editMeja({
-                id:             box.dataset.id,
-                no_meja:        box.dataset.no,
-                status:         box.dataset.status,
-                pelanggan_nama: box.dataset.pelangganNama,
-                login_at:       box.dataset.loginAt,
-            });
-        }, 600);
-    });
-
-    box.addEventListener('mousemove', () => { moved = true; });
-
-    box.addEventListener('mouseup', () => {
-        if (pressTimer) {
-            clearTimeout(pressTimer);
-            pressTimer = null;
-            // Short click → toggle
-            if (!moved) toggleMeja(box);
-        }
-    });
-
-    box.addEventListener('mouseleave', () => {
-        if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-    });
-
-    // Touch support (mobile long press)
-    box.addEventListener('touchstart', (e) => {
-        moved = false;
-        pressTimer = setTimeout(() => {
-            pressTimer = null;
-            editMeja({
-                id:             box.dataset.id,
-                no_meja:        box.dataset.no,
-                status:         box.dataset.status,
-                pelanggan_nama: box.dataset.pelangganNama,
-                login_at:       box.dataset.loginAt,
-            });
-        }, 600);
-    }, { passive: true });
-
-    box.addEventListener('touchmove', () => { moved = true; });
-
-    box.addEventListener('touchend', () => {
-        if (pressTimer) {
-            clearTimeout(pressTimer);
-            pressTimer = null;
-            if (!moved) toggleMeja(box);
-        }
-    });
-});
 </script>
 @endpush

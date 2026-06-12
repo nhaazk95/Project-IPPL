@@ -12,13 +12,13 @@
 
 {{-- Alert --}}
 @if(session('success'))
-<div class="alert-success mb-16">
-    <i class="fa-solid fa-circle-check" style="margin-right:7px;"></i>{{ session('success') }}
+<div class="alert alert-success mb-16">
+    <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
 </div>
 @endif
 @if(session('error'))
-<div class="alert-error mb-16">
-    <i class="fa-solid fa-circle-exclamation" style="margin-right:7px;"></i>{{ session('error') }}
+<div class="alert alert-danger mb-16">
+    <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
 </div>
 @endif
 
@@ -26,7 +26,7 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">
-            <i class="fa-solid fa-shield-halved" style="margin-right:8px;"></i>Data Level
+            <i class="fa-solid fa-shield-halved"></i> Data Level
         </span>
         <div style="display:flex;align-items:center;gap:12px;">
             <span style="font-size:11px;color:rgba(245,233,192,.45);">{{ $levels->count() }} level</span>
@@ -50,12 +50,12 @@
             Search
             <input type="text" id="searchLevel" class="form-control"
                 style="width:150px;padding:5px 10px;font-size:12px;"
-                placeholder="Cari..." oninput="filterLevel()">
+                placeholder="Cari level..." oninput="filterLevel()">
         </div>
     </div>
 
     <div class="card-body" style="padding:0;">
-        <table id="levelTable">
+        <table id="levelTable" class="dnusa-table">
             <thead>
                 <tr>
                     <th style="width:60px;text-align:center;">No</th>
@@ -65,9 +65,9 @@
                 </tr>
             </thead>
             <tbody id="levelTbody">
-                @foreach($levels as $i => $lv)
+                @forelse($levels as $i => $lv)
                 @php
-                    $icons = ['admin'=>'fa-crown','kasir'=>'fa-cash-register','dapur'=>'fa-utensils','pelanggan'=>'fa-user'];
+                    $icons = ['admin'=>'fa-crown','kasir'=>'fa-cash-register'];
                     $ic    = $icons[strtolower($lv->nama_level)] ?? 'fa-shield-halved';
 
                     // Siapkan data pegawai sebagai JSON untuk modal
@@ -80,7 +80,7 @@
                 @endphp
                 <tr class="level-row" data-nama="{{ strtolower($lv->nama_level) }}">
                     <td style="text-align:center;color:var(--text-light);font-weight:600;">
-                        {{ $i + 1 }}.
+                        {{ $i + 1 }}
                     </td>
                     <td>
                         <div style="display:flex;align-items:center;gap:10px;">
@@ -96,7 +96,7 @@
                     </td>
                     <td style="text-align:center;">
                         <button class="btn-icon-pegawai"
-                            onclick="openModalPegawai('{{ $lv->nama_level }}', '{{ $ic }}', {{ $pegawaiData->toJson() }})"
+                            onclick="openModalPegawai('{{ $lv->nama_level }}', '{{ $ic }}', {{ json_encode($pegawaiData) }})"
                             title="Lihat daftar pegawai {{ $lv->nama_level }}">
                             <i class="fa-solid fa-users"></i>
                             <span class="badge-count">{{ $lv->users_count }}</span>
@@ -120,7 +120,11 @@
                         </div>
                     </td>
                 </tr>
-                @endforeach
+                @empty
+                <tr>
+                    <td colspan="4" style="text-align:center;padding:40px;">Tidak ada data level</td>
+                </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
@@ -140,17 +144,17 @@
 
 {{-- ===== MODAL PEGAWAI ===== --}}
 <div id="modalPegawai" class="modal-overlay" onclick="closeModalOnOverlay(event,'modalPegawai')">
-    <div class="modal-box" style="max-width:520px;">
+    <div class="modal-box" style="max-width:560px;">
         <div class="modal-header">
             <span id="modalPegawaiTitle">
-                <i class="fa-solid fa-users" style="margin-right:8px;"></i>Daftar Pegawai
+                <i class="fa-solid fa-users"></i> Daftar Pegawai
             </span>
             <button class="modal-close" onclick="closeModal('modalPegawai')">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
         <div class="modal-body" style="padding:0;">
-            <div id="modalPegawaiContent"></div>
+            <div id="modalPegawaiContent" style="max-height:400px;overflow-y:auto;"></div>
         </div>
     </div>
 </div>
@@ -159,7 +163,7 @@
 <div id="modalTambah" class="modal-overlay" onclick="closeModalOnOverlay(event,'modalTambah')">
     <div class="modal-box">
         <div class="modal-header">
-            <span><i class="fa-solid fa-plus" style="margin-right:8px;"></i>Tambah Level</span>
+            <span><i class="fa-solid fa-plus"></i> Tambah Level</span>
             <button class="modal-close" onclick="closeModal('modalTambah')">
                 <i class="fa-solid fa-xmark"></i>
             </button>
@@ -187,7 +191,7 @@
 <div id="modalEdit" class="modal-overlay" onclick="closeModalOnOverlay(event,'modalEdit')">
     <div class="modal-box">
         <div class="modal-header">
-            <span><i class="fa-solid fa-pen-to-square" style="margin-right:8px;"></i>Ubah Level</span>
+            <span><i class="fa-solid fa-pen-to-square"></i> Ubah Level</span>
             <button class="modal-close" onclick="closeModal('modalEdit')">
                 <i class="fa-solid fa-xmark"></i>
             </button>
@@ -215,206 +219,52 @@
 
 @push('styles')
 <style>
+/* (salin style dari sebelumnya, pastikan tidak ada error) */
 .mb-16 { margin-bottom: 16px; }
-
-/* Alert */
-.alert-success, .alert-error {
-    padding: 11px 16px; border-radius: 10px;
-    font-size: 13px; font-weight: 600;
-}
+.alert-success, .alert-danger { padding: 11px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; }
 .alert-success { background:rgba(26,122,74,.08); border:1.5px solid rgba(26,122,74,.25); color:#1a7a4a; }
-.alert-error   { background:rgba(220,53,69,.07); border:1.5px solid rgba(220,53,69,.2); color:var(--danger); }
-
-/* Tombol tambah level */
-.btn-tambah-level {
-    display:inline-flex; align-items:center; gap:7px;
-    padding:7px 16px; background:var(--gold); color:var(--brown);
-    border:none; border-radius:8px; font-size:12.5px; font-weight:700;
-    cursor:pointer; font-family:inherit; transition:all .18s;
-}
-.btn-tambah-level:hover { background:#e6b800; }
-
-/* Tombol icon pegawai */
-.btn-icon-pegawai {
-    position: relative;
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 38px; height: 38px;
-    background: rgba(201,162,39,.1);
-    border: 1.5px solid rgba(201,162,39,.35);
-    border-radius: 10px;
-    color: var(--brown);
-    font-size: 15px;
-    cursor: pointer;
-    transition: all .18s;
-    font-family: inherit;
-}
-.btn-icon-pegawai:hover {
-    background: var(--brown); color: var(--gold);
-    border-color: var(--brown);
-    transform: translateY(-1px);
-}
-.badge-count {
-    position: absolute;
-    top: -6px; right: -6px;
-    background: var(--brown); color: var(--gold);
-    font-size: 9.5px; font-weight: 800;
-    min-width: 17px; height: 17px;
-    border-radius: 20px;
-    display: flex; align-items: center; justify-content: center;
-    padding: 0 3px;
-    border: 1.5px solid #fff;
-    line-height: 1;
-}
-.btn-icon-pegawai:hover .badge-count {
-    background: var(--gold); color: var(--brown);
-}
-
-/* Level table buttons */
-.btn-lv-edit {
-    display:inline-flex; align-items:center; gap:5px;
-    padding:5px 13px; border-radius:8px; font-size:12px; font-weight:600;
-    background:var(--cream); border:1.5px solid var(--cream-mid);
-    color:var(--text-mid); cursor:pointer; transition:var(--transition); font-family:inherit;
-}
-.btn-lv-edit:hover { background:var(--brown); color:var(--gold); border-color:var(--brown); }
-.btn-lv-del {
-    display:inline-flex; align-items:center; padding:5px 9px; border-radius:8px;
-    font-size:12px; font-weight:600; background:#fde8e8; border:1.5px solid #f5c6c6;
-    color:var(--danger); cursor:pointer; transition:var(--transition); font-family:inherit;
-}
-.btn-lv-del:hover { background:#fbd5d5; }
-
-/* Pagination */
-.btn-pg {
-    padding:6px 14px; border-radius:8px; font-size:12px; font-weight:600;
-    background:#fff; border:1.5px solid var(--cream-dark);
-    color:var(--text-mid); cursor:pointer; transition:var(--transition); font-family:inherit;
-}
-.btn-pg:hover:not([disabled]) { background:var(--brown); color:var(--gold); border-color:var(--brown); }
-.btn-pg[disabled] { opacity:.4; cursor:not-allowed; }
-.pg-num {
-    display:inline-flex; align-items:center; justify-content:center;
-    width:32px; height:32px; border-radius:8px; font-size:13px; font-weight:700;
-    border:1.5px solid var(--cream-dark); background:#fff; color:var(--text-mid);
-}
+.alert-danger { background:rgba(220,53,69,.07); border:1.5px solid rgba(220,53,69,.2); color:var(--danger); }
+.btn-tambah-level { display:inline-flex; align-items:center; gap:7px; padding:7px 16px; background:var(--gold); color:var(--brown); border:none; border-radius:8px; font-size:12.5px; font-weight:700; cursor:pointer; }
+.btn-icon-pegawai { position:relative; display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; background:rgba(201,162,39,.1); border:1.5px solid rgba(201,162,39,.35); border-radius:10px; color:var(--brown); font-size:15px; cursor:pointer; }
+.badge-count { position:absolute; top:-6px; right:-6px; background:var(--brown); color:var(--gold); font-size:9.5px; font-weight:800; min-width:17px; height:17px; border-radius:20px; display:flex; align-items:center; justify-content:center; padding:0 3px; border:1.5px solid #fff; }
+.btn-lv-edit { padding:5px 13px; border-radius:8px; font-size:12px; font-weight:600; background:var(--cream); border:1.5px solid var(--cream-mid); color:var(--text-mid); cursor:pointer; }
+.btn-lv-del { padding:5px 9px; border-radius:8px; font-size:12px; font-weight:600; background:#fde8e8; border:1.5px solid #f5c6c6; color:var(--danger); cursor:pointer; }
+.btn-pg { padding:6px 14px; border-radius:8px; font-size:12px; font-weight:600; background:#fff; border:1.5px solid var(--cream-dark); cursor:pointer; }
+.pg-num { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; border-radius:8px; font-size:13px; font-weight:700; border:1.5px solid var(--cream-dark); background:#fff; color:var(--text-mid); }
 .pg-num.active { background:var(--brown); color:var(--gold); border-color:var(--brown); }
-
-/* Modal pegawai — tabel dalam modal */
-.tbl-pegawai { width:100%; border-collapse:collapse; }
-.tbl-pegawai th {
-    background:var(--cream); padding:9px 14px;
-    font-size:11.5px; font-weight:700; color:var(--text-mid);
-    text-align:left; border-bottom:1.5px solid var(--cream-dark);
-}
-.tbl-pegawai td {
-    padding:10px 14px; border-bottom:1px solid var(--cream-dark);
-    font-size:13px; vertical-align:middle;
-}
-.tbl-pegawai tbody tr:last-child td { border-bottom:none; }
-.tbl-pegawai tbody tr:hover { background:rgba(201,162,39,.04); }
-
-/* Badge ID */
-.badge-id {
-    display:inline-flex; align-items:center;
-    padding:3px 9px; background:var(--brown); color:var(--gold);
-    border-radius:6px; font-size:11px; font-weight:700;
-    font-family:monospace; letter-spacing:.3px;
-}
-
-/* Avatar */
-.avatar-circle {
-    width:30px; height:30px; border-radius:50%;
-    background:rgba(201,162,39,.15); border:1.5px solid rgba(201,162,39,.35);
-    color:var(--brown); display:flex; align-items:center; justify-content:center;
-    font-size:12px; font-weight:800; flex-shrink:0;
-}
-
-/* Badge Anda */
-.badge-you {
-    display:inline-flex; align-items:center; padding:2px 7px;
-    background:rgba(26,122,74,.1); border:1px solid rgba(26,122,74,.25);
-    color:#1a7a4a; border-radius:20px; font-size:10px; font-weight:700;
-}
-
-/* Tombol hapus pegawai */
-.btn-hapus-pegawai {
-    display:inline-flex; align-items:center; gap:5px;
-    padding:5px 11px; border-radius:8px; font-size:11.5px; font-weight:600;
-    background:#fde8e8; border:1.5px solid #f5c6c6;
-    color:var(--danger); cursor:pointer; transition:var(--transition); font-family:inherit;
-}
-.btn-hapus-pegawai:hover { background:var(--danger); color:#fff; border-color:var(--danger); }
-
-/* Empty state dalam modal */
-.modal-empty {
-    padding:36px 20px; text-align:center; color:var(--text-light);
-}
-.modal-empty i { font-size:30px; opacity:.35; display:block; margin-bottom:10px; }
-
-/* Modal umum */
-.modal-overlay {
-    display:none; position:fixed; inset:0; z-index:1000;
-    background:rgba(0,0,0,.45); align-items:center; justify-content:center;
-}
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center; }
 .modal-overlay.active { display:flex; }
-.modal-box {
-    background:#fff; border-radius:16px; width:100%; max-width:400px; margin:16px;
-    box-shadow:0 8px 40px rgba(0,0,0,.18); overflow:hidden; animation:modalIn .2s ease;
-}
-@keyframes modalIn {
-    from { transform:translateY(-18px); opacity:0; }
-    to   { transform:translateY(0);     opacity:1; }
-}
-.modal-header {
-    background:var(--brown); color:var(--gold);
-    padding:14px 18px; font-weight:700; font-size:13.5px;
-    display:flex; align-items:center; justify-content:space-between;
-}
-.modal-close {
-    background:none; border:none; color:var(--gold);
-    font-size:16px; cursor:pointer; transition:opacity .15s;
-}
-.modal-close:hover { opacity:.7; }
-.modal-body { padding:20px 18px 18px; }
-.btn-modal-cancel {
-    padding:8px 18px; border-radius:9px; font-size:13px; font-weight:600;
-    background:var(--cream); border:1.5px solid var(--cream-dark);
-    color:var(--text-mid); cursor:pointer; font-family:inherit; transition:all .15s;
-}
-.btn-modal-cancel:hover { background:var(--cream-dark); }
-.btn-modal-submit {
-    display:inline-flex; align-items:center; gap:7px;
-    padding:8px 20px; border-radius:9px; background:var(--brown); color:var(--gold);
-    border:none; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:all .15s;
-}
-.btn-modal-submit:hover { opacity:.88; }
+.modal-box { background:#fff; border-radius:16px; width:100%; max-width:460px; margin:16px; overflow:hidden; }
+.modal-header { background:var(--brown); color:var(--gold); padding:14px 18px; font-weight:700; display:flex; justify-content:space-between; }
+.modal-body { padding:20px 18px; }
+.modal-footer { padding:12px 18px; border-top:1px solid var(--cream-dark); display:flex; justify-content:flex-end; gap:10px; }
+.btn-modal-cancel, .btn-modal-submit { padding:8px 18px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; }
+.btn-modal-cancel { background:var(--cream); border:1.5px solid var(--cream-dark); color:var(--text-mid); }
+.btn-modal-submit { background:var(--brown); color:var(--gold); border:none; }
+.tbl-pegawai { width:100%; border-collapse:collapse; }
+.tbl-pegawai th { background:var(--cream); padding:9px 14px; font-size:11.5px; text-align:left; border-bottom:1.5px solid var(--cream-dark); }
+.tbl-pegawai td { padding:10px 14px; border-bottom:1px solid var(--cream-dark); font-size:13px; }
+.badge-id { background:var(--brown); color:var(--gold); padding:3px 9px; border-radius:6px; font-size:11px; font-weight:700; font-family:monospace; }
+.avatar-circle { width:30px; height:30px; border-radius:50%; background:rgba(201,162,39,.15); display:flex; align-items:center; justify-content:center; font-weight:800; }
+.badge-you { padding:2px 7px; background:rgba(26,122,74,.1); border:1px solid rgba(26,122,74,.25); color:#1a7a4a; border-radius:20px; font-size:10px; }
+.btn-hapus-pegawai { padding:5px 11px; border-radius:8px; font-size:11.5px; font-weight:600; background:#fde8e8; border:1.5px solid #f5c6c6; color:var(--danger); cursor:pointer; }
 </style>
 @endpush
 
 @push('scripts')
 <script>
-// ── CSRF token untuk form hapus pegawai ───────────────
+// ── CSRF token ─────────────────────────────────────────
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 
 // ── Modal helpers ─────────────────────────────────────
-function openModal(id)  { document.getElementById(id).classList.add('active'); }
+function openModal(id) { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-function closeModalOnOverlay(e, id) {
-    if (e.target === document.getElementById(id)) closeModal(id);
-}
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-        closeModal('modalTambah');
-        closeModal('modalEdit');
-        closeModal('modalPegawai');
-    }
-});
+function closeModalOnOverlay(e, id) { if (e.target === document.getElementById(id)) closeModal(id); }
 
 // ── Modal Tambah ──────────────────────────────────────
 function openModalTambah() {
     document.getElementById('inputTambah').value = '';
     openModal('modalTambah');
-    setTimeout(() => document.getElementById('inputTambah').focus(), 100);
 }
 
 // ── Modal Edit ────────────────────────────────────────
@@ -422,47 +272,40 @@ function openModalEdit(id, nama) {
     document.getElementById('inputNamaLevel').value = nama;
     document.getElementById('ubahLevelForm').action = '/admin/level/' + id;
     openModal('modalEdit');
-    setTimeout(() => document.getElementById('inputNamaLevel').focus(), 100);
 }
 
 // ── Modal Pegawai ─────────────────────────────────────
 function openModalPegawai(namaLevel, icon, pegawai) {
-    // Update judul
     document.getElementById('modalPegawaiTitle').innerHTML =
-        `<i class="fa-solid ${icon}" style="margin-right:8px;"></i>Pegawai — ${namaLevel}`;
+        `<i class="fa-solid ${icon}"></i> Pegawai — ${namaLevel}`;
 
-    // Render isi
     const content = document.getElementById('modalPegawaiContent');
-
     if (!pegawai || pegawai.length === 0) {
-        content.innerHTML = `
-            <div class="modal-empty">
-                <i class="fa-solid fa-users-slash"></i>
-                Belum ada pegawai dengan level ini
-            </div>`;
+        content.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text-light);">
+            <i class="fa-solid fa-users-slash"></i> Belum ada pegawai dengan level ini
+        </div>`;
     } else {
         const rows = pegawai.map((p, i) => {
             const inisial = p.name.charAt(0).toUpperCase();
-            const badgeYou = p.is_me ? `<span class="badge-you">Anda</span>` : '';
+            const badgeYou = p.is_me ? `<span class="badge-you ms-2">Anda</span>` : '';
             const actionBtn = p.is_me
-                ? `<span style="font-size:11px;color:var(--text-light);font-style:italic;">—</span>`
+                ? `<span style="font-size:11px;color:var(--text-light);">—</span>`
                 : `<form method="POST" action="${p.delete_url}" style="margin:0;"
-                        onsubmit="return confirmHapus('${p.name.replace(/'/g,"\\'")}', '${p.kd_user}')">
+                        onsubmit="return confirm('Hapus akun pegawai ${p.name}?')">
                         <input type="hidden" name="_token" value="${CSRF}">
                         <input type="hidden" name="_method" value="DELETE">
                         <button type="submit" class="btn-hapus-pegawai">
                             <i class="fa-solid fa-user-minus"></i> Hapus
                         </button>
                    </form>`;
-
             return `
             <tr>
-                <td style="text-align:center;color:var(--text-light);font-weight:600;">${i+1}.</td>
+                <td style="text-align:center;color:var(--text-light);">${i+1}.</td>
                 <td><span class="badge-id">${p.kd_user}</span></td>
                 <td>
                     <div style="display:flex;align-items:center;gap:9px;">
                         <div class="avatar-circle">${inisial}</div>
-                        <span style="font-weight:600;font-size:13px;color:var(--text-dark);">${p.name}</span>
+                        <span style="font-weight:600;">${p.name}</span>
                         ${badgeYou}
                     </div>
                 </td>
@@ -474,28 +317,28 @@ function openModalPegawai(namaLevel, icon, pegawai) {
             <table class="tbl-pegawai">
                 <thead>
                     <tr>
-                        <th style="width:44px;text-align:center;">No</th>
-                        <th style="width:130px;">ID Pegawai</th>
+                        <th style="width:44px;">No</th>
+                        <th style="width:120px;">ID Pegawai</th>
                         <th>Nama</th>
-                        <th style="width:90px;text-align:center;">Action</th>
+                        <th style="width:90px;text-align:center;">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>${rows}</tbody>
-            </table>`;
+            </table>
+        `;
     }
-
     openModal('modalPegawai');
-}
-
-// ── Konfirmasi hapus pegawai ──────────────────────────
-function confirmHapus(nama, id) {
-    return confirm(`Hapus akun pegawai ini?\n\nID   : ${id}\nNama : ${nama}\n\nAksi ini tidak bisa dibatalkan.`);
 }
 
 // ── Filter / Search level ─────────────────────────────
 let currentPage = 1;
 let perPage = 10;
-const allRows = Array.from(document.querySelectorAll('.level-row'));
+let allRows = [];
+
+function initRows() {
+    allRows = Array.from(document.querySelectorAll('.level-row'));
+    renderTable('');
+}
 
 function filterLevel() {
     const q = document.getElementById('searchLevel').value.toLowerCase();
@@ -505,36 +348,38 @@ function filterLevel() {
 
 function renderTable(q = '') {
     const filtered = allRows.filter(r => !q || r.dataset.nama.includes(q));
-    const total    = filtered.length;
-    const start    = (currentPage - 1) * perPage;
-    const end      = Math.min(start + perPage, total);
+    const total = filtered.length;
+    const start = (currentPage - 1) * perPage;
+    const end = Math.min(start + perPage, total);
 
     allRows.forEach(r => r.style.display = 'none');
     filtered.slice(start, end).forEach(r => r.style.display = '');
 
     document.getElementById('showingInfo').textContent =
-        total === 0 ? 'Tidak ada data'
-                    : `Showing ${start + 1} to ${end} of ${total} entries`;
+        total === 0 ? 'Tidak ada data' : `Showing ${start+1} to ${end} of ${total} entries`;
 
     document.getElementById('pgNum').textContent = currentPage;
-    document.getElementById('btnPrev').disabled  = currentPage === 1;
-    document.getElementById('btnNext').disabled  = end >= total;
+    document.getElementById('btnPrev').disabled = currentPage === 1;
+    document.getElementById('btnNext').disabled = end >= total;
 }
 
 function changePage(dir) {
-    const q        = document.getElementById('searchLevel').value.toLowerCase();
+    const q = document.getElementById('searchLevel').value.toLowerCase();
     const filtered = allRows.filter(r => !q || r.dataset.nama.includes(q));
-    const maxPage  = Math.ceil(filtered.length / perPage) || 1;
-    currentPage    = Math.max(1, Math.min(currentPage + dir, maxPage));
+    const maxPage = Math.ceil(filtered.length / perPage) || 1;
+    currentPage = Math.max(1, Math.min(currentPage + dir, maxPage));
     renderTable(q);
 }
 
-document.getElementById('showEntries').addEventListener('change', function () {
+document.getElementById('showEntries')?.addEventListener('change', function() {
     perPage = parseInt(this.value);
     currentPage = 1;
     renderTable(document.getElementById('searchLevel').value.toLowerCase());
 });
 
-renderTable();
+// Inisialisasi setelah DOM siap
+document.addEventListener('DOMContentLoaded', function() {
+    initRows();
+});
 </script>
 @endpush

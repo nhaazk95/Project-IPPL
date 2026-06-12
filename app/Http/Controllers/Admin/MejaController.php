@@ -45,33 +45,14 @@ class MejaController extends Controller
     public function destroy(string $id)
     {
         $meja = Meja::findOrFail($id);
-        if ($meja->status === 'terisi') {
-            return back()->with('error', 'Meja sedang terisi, tidak bisa dihapus.');
-        }
+        // Tidak ada pengecekan status, karena user sekarang hanya bisa hapus via modal edit
         $meja->delete();
         return back()->with('success', 'Meja berhasil dihapus.');
     }
 
     /**
-     * Toggle status meja via AJAX (klik meja di grid)
-     */
-    public function toggleStatus(string $id)
-    {
-        $meja = Meja::findOrFail($id);
-        $meja->status = $meja->status === 'terisi' ? 'tersedia' : 'terisi';
-        $meja->save();
-
-        return response()->json([
-            'success' => true,
-            'status'  => $meja->status,
-            'no_meja' => $meja->no_meja,
-        ]);
-    }
-
-    /**
      * Force-logout pelanggan di meja tertentu.
      * Kosongkan keranjang temp + bebaskan meja.
-     * Session pelanggan akan invalid otomatis saat mereka refresh (middleware cek DB).
      */
     public function kosongkanMeja(string $id)
     {
@@ -83,7 +64,6 @@ class MejaController extends Controller
             ->first();
 
         if ($pelanggan) {
-            // Hapus keranjang temporary milik pelanggan ini
             DetailOrderTemporary::where('pelanggan_kd', $pelanggan->kd_pelanggan)->delete();
         }
 
