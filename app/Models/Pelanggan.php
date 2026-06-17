@@ -18,10 +18,12 @@ class Pelanggan extends Model
         'kd_pelanggan',
         'name_pelanggan',
         'no_meja',
+        'login_at',
     ];
 
     protected $casts = [
         'no_meja' => 'integer',
+        'login_at' => 'datetime',
     ];
 
     public function orders()
@@ -54,7 +56,7 @@ class Pelanggan extends Model
 
         DetailOrderTemporary::create([
             'kd_detail'    => 'TMP-' . time(),
-            'pelanggan_kd' => $this->kd_pelanggan, 
+            'pelanggan_kd' => $this->kd_pelanggan,
             'menu_kd'      => $kdMenu,
             'total'        => $jumlah,
             'sub_total'    => $menu->harga * $jumlah,

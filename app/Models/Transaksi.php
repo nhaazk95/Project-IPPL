@@ -19,6 +19,7 @@ class Transaksi extends Model
         'order_kd',
         'user_kd',
         'total_harga',
+        'metode',           // ← TAMBAHKAN INI
         'tanggal',
         'waktu',
     ];
@@ -29,6 +30,7 @@ class Transaksi extends Model
         'waktu'       => 'datetime',
     ];
 
+    // Relasi
     public function order()
     {
         return $this->belongsTo(Order::class, 'order_kd', 'kd_order');
@@ -44,21 +46,23 @@ class Transaksi extends Model
         return $this->hasMany(DetailOrder::class, 'transaksi_kd', 'kd_transaksi');
     }
 
+    // Business methods
     public function hitungTotal(): int
     {
         return $this->detailOrders()->sum('sub_total');
     }
 
-    public function prosesPembayaran(string $kdOrder, string $kdKasir): self
+    public function prosesPembayaran(string $kdOrder, string $kdKasir, string $metode = 'cash'): self
     {
         $order = Order::with('detailOrders')->findOrFail($kdOrder);
         $total = $order->detailOrders->sum('sub_total');
 
         $transaksi = self::create([
-            'kd_transaksi' => 'TRX-' . time(),
+            'kd_transaksi' => 'TRX-' . now()->format('YmdHis') . '-' . rand(100, 999),
             'order_kd'     => $kdOrder,
             'user_kd'      => $kdKasir,
             'total_harga'  => $total,
+            'metode'       => $metode,
             'tanggal'      => now()->toDateString(),
             'waktu'        => now(),
         ]);
@@ -86,6 +90,7 @@ class Transaksi extends Model
             'waktu'        => $this->waktu,
             'kasir'        => $this->kasir?->name,
             'total_harga'  => $this->total_harga,
+            'metode'       => $this->metode,
             'items'        => $this->detailOrders()->with('menu')->get(),
         ];
     }

@@ -13,7 +13,6 @@ class Level extends Model
     protected $primaryKey = 'id';
 
     protected $fillable = [
-        'id',
         'nama_level',
     ];
 
