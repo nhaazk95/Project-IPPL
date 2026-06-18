@@ -37,23 +37,33 @@ class DashboardController extends Controller
 
     public function notifOrder(Request $request)
     {
-        $lastId  = $request->input('last_id', '');
-        $jumlah  = Order::where('status_order', 'pending')->count();
+        // last_id sekarang berisi timestamp ISO (waktu order terakhir yang sudah
+        // diketahui kasir), bukan kd_order — karena kd_order punya suffix acak
+        // sehingga perbandingan '>' pada string tidak merepresentasikan urutan waktu.
+        $lastSeenAt = $request->input('last_id', '');
 
-        $orderBaru = 0;
-        if ($lastId) {
-            $orderBaru = Order::where('status_order', 'pending')
-                ->where('kd_order', '>', $lastId)
-                ->count();
+        $jumlahPending = Order::where('status_order', 'pending')->count();
+
+        $newOrders = collect();
+        if ($lastSeenAt) {
+            $newOrders = Order::where('status_order', 'pending')
+                ->where('waktu', '>', $lastSeenAt)
+                ->orderBy('waktu')
+                ->limit(10)
+                ->get(['kd_order', 'waktu']);
         }
 
-        $latestOrder = Order::where('status_order', 'pending')
-            ->orderByDesc('kd_order')->first();
+        $latestOrder = Order::orderByDesc('waktu')->first();
 
         return response()->json([
-            'pending'    => $jumlah,
-            'new_orders' => $orderBaru,
-            'latest_kd'  => $latestOrder?->kd_order ?? $lastId,
+            'pending'    => $jumlahPending,
+            'new_orders' => $newOrders->count(),
+            'orders'     => $newOrders->map(fn ($o) => [
+                'kd_order' => $o->kd_order,
+                'waktu'    => $o->waktu?->format('H:i'),
+            ]),
+            // dikembalikan supaya client menyimpan timestamp terbaru sebagai acuan polling berikutnya
+            'latest_seen_at' => $latestOrder?->waktu?->toIso8601String() ?? $lastSeenAt,
         ]);
     }
 }

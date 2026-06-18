@@ -16,6 +16,7 @@
             --bg-main:     #F5EBD8;
             --bg-card:     #EDE0CD;
             --sidebar-w:   260px;
+            --sidebar-w-collapsed: 76px;
             --header-h:    60px;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,7 +32,10 @@
             display: flex;
             flex-direction: column;
             z-index: 100;
+            transition: width 0.25s ease;
+            overflow: hidden;
         }
+        .sidebar.collapsed { width: var(--sidebar-w-collapsed); }
         .sidebar-header {
             background: var(--brown-mid);
             display: flex;
@@ -40,8 +44,28 @@
             padding: 14px 18px;
             height: var(--header-h);
         }
-        .sidebar-header .logo { font-size: 24px; }
-        .sidebar-header .brand { color: var(--gold); font-size: 15px; font-weight: 700; letter-spacing: 0.3px; }
+        .sidebar-header .logo { font-size: 24px; flex: none; }
+        .sidebar-header .brand { color: var(--gold); font-size: 15px; font-weight: 700; letter-spacing: 0.3px; white-space: nowrap; opacity: 1; transition: opacity 0.15s ease; }
+        .sidebar.collapsed .sidebar-header .brand { opacity: 0; width: 0; }
+
+        .sidebar-toggle {
+            margin-left: auto;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.75);
+            cursor: pointer;
+            font-size: 16px;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: none;
+            transition: background 0.2s, transform 0.25s ease;
+        }
+        .sidebar-toggle:hover { background: rgba(255,255,255,0.12); color: #fff; }
+        .sidebar.collapsed .sidebar-toggle { transform: rotate(180deg); margin-left: 0; }
 
         .user-box {
             padding: 22px 18px 18px;
@@ -49,6 +73,7 @@
             flex-direction: column;
             align-items: center;
             border-bottom: 1px solid rgba(255,255,255,0.08);
+            white-space: nowrap;
         }
         .user-avatar {
             width: 64px; height: 64px;
@@ -57,11 +82,15 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 28px;
             margin-bottom: 10px;
+            flex: none;
         }
         .user-name { color: var(--gold); font-size: 14px; font-weight: 600; }
         .user-role { color: rgba(255,255,255,0.55); font-size: 12px; }
+        .sidebar.collapsed .user-avatar { width: 40px; height: 40px; font-size: 20px; margin-bottom: 0; }
+        .sidebar.collapsed .user-name,
+        .sidebar.collapsed .user-role { display: none; }
 
-        .nav { flex: 1; padding: 10px 0; overflow-y: auto; }
+        .nav { flex: 1; padding: 10px 0; overflow-y: auto; overflow-x: hidden; }
         .nav-item {
             display: flex;
             align-items: center;
@@ -74,10 +103,11 @@
             transition: all 0.2s;
             border-left: 3px solid transparent;
             cursor: pointer;
+            white-space: nowrap;
         }
         .nav-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
         .nav-item.active { background: var(--brown-main); color: #fff; border-left-color: var(--gold); }
-        .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+        .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; flex: none; }
         .nav-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 6px 0; }
         .nav-group { position: relative; }
         .nav-sub { display: none; background: rgba(0,0,0,0.2); }
@@ -85,6 +115,31 @@
         .nav-sub .nav-item { padding-left: 52px; font-size: 12px; }
         .nav-item .chevron { margin-left: auto; font-size: 11px; transition: transform 0.2s; }
         .nav-item.open .chevron { transform: rotate(90deg); }
+        .nav-item .nav-label { transition: opacity 0.15s ease; }
+
+        .sidebar.collapsed .nav-item { justify-content: center; padding: 13px 0; }
+        .sidebar.collapsed .nav-item .nav-label,
+        .sidebar.collapsed .nav-item .chevron { display: none; }
+        .sidebar.collapsed .nav-sub { display: none !important; }
+
+        /* tooltip on collapsed items */
+        .sidebar.collapsed .nav-item { position: relative; }
+        .sidebar.collapsed .nav-item:hover::after {
+            content: attr(data-label);
+            position: absolute;
+            left: calc(var(--sidebar-w-collapsed) + 8px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--brown-dark);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+            z-index: 150;
+            pointer-events: none;
+        }
 
         /* ── HEADER ── */
         .header {
@@ -100,7 +155,9 @@
             padding: 0 24px;
             gap: 16px;
             z-index: 90;
+            transition: left 0.25s ease;
         }
+        .header.collapsed { left: var(--sidebar-w-collapsed); }
         .header-icon { font-size: 18px; color: rgba(255,255,255,0.8); cursor: pointer; }
         .header-icon:hover { color: var(--gold); }
 
@@ -111,7 +168,9 @@
             flex: 1;
             padding: 28px;
             min-height: calc(100vh - var(--header-h));
+            transition: margin-left 0.25s ease;
         }
+        .main.collapsed { margin-left: var(--sidebar-w-collapsed); }
         .breadcrumb {
             text-align: center;
             margin-bottom: 24px;
@@ -243,10 +302,18 @@
 
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+            .sidebar { width: var(--sidebar-w); transform: translateX(-100%); transition: transform 0.3s; }
             .sidebar.open { transform: none; }
-            .header { left: 0; }
-            .main { margin-left: 0; }
+            .sidebar.collapsed { width: var(--sidebar-w); }
+            .sidebar.collapsed .brand,
+            .sidebar.collapsed .user-name,
+            .sidebar.collapsed .user-role,
+            .sidebar.collapsed .nav-item .nav-label,
+            .sidebar.collapsed .nav-item .chevron { display: initial; opacity: 1; width: auto; }
+            .sidebar.collapsed .user-avatar { width: 64px; height: 64px; font-size: 28px; margin-bottom: 10px; }
+            .sidebar.collapsed .nav-item { justify-content: flex-start; padding: 13px 20px; }
+            .header, .header.collapsed { left: 0; }
+            .main, .main.collapsed { margin-left: 0; }
             .grid-2, .grid-3 { grid-template-columns: 1fr; }
         }
     </style>
@@ -259,6 +326,7 @@
     <div class="sidebar-header">
         <span class="logo">🏠</span>
         <span class="brand">Dapur Nusantara</span>
+        <button class="sidebar-toggle" id="sidebarToggle" title="Tutup/Buka Menu" type="button">◀</button>
     </div>
 
     <div class="user-box">
@@ -268,32 +336,32 @@
     </div>
 
     <nav class="nav">
-        <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-            <span class="nav-icon">⊞</span> Dashboard
+        <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" data-label="Dashboard">
+            <span class="nav-icon">⊞</span> <span class="nav-label">Dashboard</span>
         </a>
         <div class="nav-divider"></div>
-        <a href="{{ route('admin.level.index') }}" class="nav-item {{ request()->routeIs('admin.level.*') ? 'active' : '' }}">
-            <span class="nav-icon">👤</span> Level
+        <a href="{{ route('admin.level.index') }}" class="nav-item {{ request()->routeIs('admin.level.*') ? 'active' : '' }}" data-label="Level">
+            <span class="nav-icon">👤</span> <span class="nav-label">Level</span>
         </a>
-        <a href="{{ route('admin.kategori.index') }}" class="nav-item {{ request()->routeIs('admin.kategori.*') ? 'active' : '' }}">
-            <span class="nav-icon">☰</span> Kategori
+        <a href="{{ route('admin.kategori.index') }}" class="nav-item {{ request()->routeIs('admin.kategori.*') ? 'active' : '' }}" data-label="Kategori">
+            <span class="nav-icon">☰</span> <span class="nav-label">Kategori</span>
         </a>
-        <a href="{{ route('admin.menu.index') }}" class="nav-item {{ request()->routeIs('admin.menu.*') ? 'active' : '' }}">
-            <span class="nav-icon">🍴</span> Menu
+        <a href="{{ route('admin.menu.index') }}" class="nav-item {{ request()->routeIs('admin.menu.*') ? 'active' : '' }}" data-label="Menu">
+            <span class="nav-icon">🍴</span> <span class="nav-label">Menu</span>
         </a>
-        <a href="{{ route('admin.meja.index') }}" class="nav-item {{ request()->routeIs('admin.meja.*') ? 'active' : '' }}">
-            <span class="nav-icon">⊞+</span> Meja
+        <a href="{{ route('admin.meja.index') }}" class="nav-item {{ request()->routeIs('admin.meja.*') ? 'active' : '' }}" data-label="Meja">
+            <span class="nav-icon">⊞+</span> <span class="nav-label">Meja</span>
         </a>
-        <a href="{{ route('admin.transaksi.index') }}" class="nav-item {{ request()->routeIs('admin.transaksi.*') ? 'active' : '' }}">
-            <span class="nav-icon">📋</span> Transaksi
+        <a href="{{ route('admin.transaksi.index') }}" class="nav-item {{ request()->routeIs('admin.transaksi.*') ? 'active' : '' }}" data-label="Transaksi">
+            <span class="nav-icon">📋</span> <span class="nav-label">Transaksi</span>
         </a>
         <div class="nav-divider"></div>
 
         {{-- Laporan Group --}}
         <div class="nav-group">
             <div class="nav-item {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}"
-                 onclick="toggleSub('laporan-sub', this)">
-                <span class="nav-icon">📄</span> Laporan
+                 onclick="toggleSub('laporan-sub', this)" data-label="Laporan">
+                <span class="nav-icon">📄</span> <span class="nav-label">Laporan</span>
                 <span class="chevron {{ request()->routeIs('admin.laporan.*') ? 'open' : '' }}">▶</span>
             </div>
             <div class="nav-sub {{ request()->routeIs('admin.laporan.*') ? 'open' : '' }}" id="laporan-sub">
@@ -309,14 +377,14 @@
 </aside>
 
 <!-- HEADER -->
-<header class="header">
+<header class="header" id="mainHeader">
     <span class="header-icon" title="Cari">🔍</span>
     <span class="header-icon" title="Notifikasi">🔔</span>
     <span class="header-icon" title="Keluar" onclick="showLogout()">☰</span>
 </header>
 
 <!-- MAIN CONTENT -->
-<main class="main">
+<main class="main" id="mainContent">
     <div class="breadcrumb">
         @yield('breadcrumb')
     </div>
@@ -355,6 +423,38 @@ function toggleSub(id, el) {
     sub.classList.toggle('open');
     el.classList.toggle('open');
 }
+
+(function () {
+    const sidebar = document.getElementById('sidebar');
+    const header = document.getElementById('mainHeader');
+    const main = document.getElementById('mainContent');
+    const toggleBtn = document.getElementById('sidebarToggle');
+
+    function applyState(collapsed) {
+        sidebar.classList.toggle('collapsed', collapsed);
+        header.classList.toggle('collapsed', collapsed);
+        main.classList.toggle('collapsed', collapsed);
+    }
+
+    const isMobile = () => window.innerWidth <= 768;
+
+    // Restore saved state on desktop only
+    const saved = localStorage.getItem('sidebarCollapsed') === '1';
+    if (!isMobile()) {
+        applyState(saved);
+    }
+
+    toggleBtn.addEventListener('click', function () {
+        if (isMobile()) {
+            // On mobile, the button slides the sidebar in/out instead of collapsing it
+            sidebar.classList.toggle('open');
+        } else {
+            const collapsed = !sidebar.classList.contains('collapsed');
+            applyState(collapsed);
+            localStorage.setItem('sidebarCollapsed', collapsed ? '1' : '0');
+        }
+    });
+})();
 </script>
 
 @stack('scripts')

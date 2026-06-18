@@ -27,6 +27,9 @@
                 <div class="logo-text">Dapur Nusantara</div>
                 <div class="logo-sub">@auth {{ auth()->user()->isAdmin() ? 'Panel Admin' : 'Panel Kasir' }} @endauth</div>
             </div>
+            <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" type="button" title="Tutup/Buka Menu">
+                <i class="fa-solid fa-angles-left"></i>
+            </button>
         </div>
 
         <div class="sidebar-user-info">
@@ -46,23 +49,23 @@
             @auth
             @if(auth()->user()->isAdmin())
                 <div class="nav-section-label">Utama</div>
-                <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                <a href="{{ route('admin.dashboard') }}" class="nav-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" data-label="Dashboard">
                     <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span> Dashboard
                 </a>
                 <div class="nav-section-label">Manajemen</div>
-                <a href="{{ route('admin.level.index') }}" class="nav-item {{ request()->routeIs('admin.level.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.level.index') }}" class="nav-item {{ request()->routeIs('admin.level.*') ? 'active' : '' }}" data-label="Level">
                     <span class="nav-icon"><i class="fa-solid fa-shield-halved"></i></span> Level
                 </a>
-                <a href="{{ route('admin.menu.index') }}" class="nav-item {{ request()->routeIs('admin.menu.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.menu.index') }}" class="nav-item {{ request()->routeIs('admin.menu.*') ? 'active' : '' }}" data-label="Data Menu">
                     <span class="nav-icon"><i class="fa-solid fa-utensils"></i></span> Data Menu
                 </a>
-                <a href="{{ route('admin.kategori.index') }}" class="nav-item {{ request()->routeIs('admin.kategori.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.kategori.index') }}" class="nav-item {{ request()->routeIs('admin.kategori.*') ? 'active' : '' }}" data-label="Kategori">
                     <span class="nav-icon"><i class="fa-solid fa-layer-group"></i></span> Kategori
                 </a>
-                <a href="{{ route('admin.meja.index') }}" class="nav-item {{ request()->routeIs('admin.meja.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.meja.index') }}" class="nav-item {{ request()->routeIs('admin.meja.*') ? 'active' : '' }}" data-label="Meja">
                     <span class="nav-icon"><i class="fa-solid fa-chair"></i></span> Meja
                 </a>
-                <a href="{{ route('admin.transaksi.index') }}" class="nav-item {{ request()->routeIs('admin.transaksi.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.transaksi.index') }}" class="nav-item {{ request()->routeIs('admin.transaksi.*') ? 'active' : '' }}" data-label="Transaksi">
                     <span class="nav-icon"><i class="fa-solid fa-cash-register"></i></span> Transaksi
                 </a>
 
@@ -70,7 +73,7 @@
                 {{-- Laporan accordion --}}
                 <div class="nav-group" id="navLaporanGroup">
                     <div class="nav-item nav-parent {{ request()->routeIs('admin.laporan.*') ? 'active' : '' }}"
-                        onclick="toggleNavGroup('navLaporanSub')" style="cursor:pointer;justify-content:space-between;">
+                        onclick="toggleNavGroup('navLaporanSub')" style="cursor:pointer;justify-content:space-between;" data-label="Laporan">
                         <span style="display:flex;align-items:center;gap:11px;">
                             <span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span> Laporan
                         </span>
@@ -93,13 +96,13 @@
                 </div>
             @elseif(auth()->user()->isKasir())
                 <div class="nav-section-label">Menu Kasir</div>
-                <a href="{{ route('kasir.dashboard') }}" class="nav-item {{ request()->routeIs('kasir.dashboard') ? 'active' : '' }}">
+                <a href="{{ route('kasir.dashboard') }}" class="nav-item {{ request()->routeIs('kasir.dashboard') ? 'active' : '' }}" data-label="Dashboard">
                     <span class="nav-icon"><i class="fa-solid fa-gauge-high"></i></span> Dashboard
                 </a>
-                <a href="{{ route('kasir.transaksi.index') }}" class="nav-item {{ request()->routeIs('kasir.transaksi*') ? 'active' : '' }}">
+                <a href="{{ route('kasir.transaksi.index') }}" class="nav-item {{ request()->routeIs('kasir.transaksi*') ? 'active' : '' }}" data-label="Transaksi">
                     <span class="nav-icon"><i class="fa-solid fa-cash-register"></i></span> Transaksi
                 </a>
-                <a href="{{ route('kasir.laporan') }}" class="nav-item {{ request()->routeIs('kasir.laporan') ? 'active' : '' }}">
+                <a href="{{ route('kasir.laporan') }}" class="nav-item {{ request()->routeIs('kasir.laporan') ? 'active' : '' }}" data-label="Laporan">
                     <span class="nav-icon"><i class="fa-solid fa-file-invoice"></i></span> Laporan
                 </a>
             @endif
@@ -126,10 +129,13 @@
     </aside>
 
     {{-- ===== MAIN CONTENT ===== --}}
-    <div class="main-content">
+    <div class="main-content" id="mainContent">
 
         {{-- ===== TOPBAR ===== --}}
         <header class="topbar">
+            <button class="sidebar-expand-btn" id="sidebarExpandBtn" type="button" title="Buka Menu">
+                <i class="fa-solid fa-angles-right"></i>
+            </button>
             <div class="topbar-title">@yield('page-title', 'Dashboard')</div>
 
             <div class="topbar-actions">
@@ -351,6 +357,57 @@
     const el = document.getElementById('clock');
     if (el) { const n = new Date(); el.textContent = String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
     setTimeout(tick, 1000);
+})();
+
+// ─── Sidebar Collapse / Expand (fully hides the sidebar) ──
+(function () {
+    const sidebar = document.getElementById('sidebar');
+    const main = document.getElementById('mainContent');
+    const collapseBtn = document.getElementById('sidebarCollapseBtn');
+    const expandBtn = document.getElementById('sidebarExpandBtn');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (!sidebar || !main || !collapseBtn || !expandBtn) return;
+
+    const isMobile = () => window.innerWidth <= 768;
+
+    function closeSidebar() {
+        sidebar.classList.add('collapsed');
+        sidebar.classList.remove('open');
+        main.classList.add('collapsed');
+        expandBtn.classList.add('show');
+        if (overlay) overlay.style.display = 'none';
+        if (!isMobile()) localStorage.setItem('dnusaSidebarCollapsed', '1');
+    }
+
+    function openSidebar() {
+        sidebar.classList.remove('collapsed');
+        main.classList.remove('collapsed');
+        expandBtn.classList.remove('show');
+        if (isMobile()) {
+            sidebar.classList.add('open');
+            if (overlay) overlay.style.display = 'block';
+        }
+        if (!isMobile()) localStorage.setItem('dnusaSidebarCollapsed', '0');
+    }
+
+    // Restore saved preference (desktop only — mobile always starts closed)
+    if (!isMobile() && localStorage.getItem('dnusaSidebarCollapsed') === '1') {
+        closeSidebar();
+    } else if (isMobile()) {
+        closeSidebar();
+    }
+
+    collapseBtn.addEventListener('click', closeSidebar);
+    expandBtn.addEventListener('click', openSidebar);
+
+    window.addEventListener('resize', function () {
+        if (isMobile()) {
+            closeSidebar();
+        } else {
+            if (localStorage.getItem('dnusaSidebarCollapsed') === '1') closeSidebar();
+            else openSidebar();
+        }
+    });
 })();
 
 // Toast
@@ -598,7 +655,7 @@ document.addEventListener('click', function(e) {
 // ─── Bell (Kasir only) ──────────────────────────────────
 @auth
 @if(auth()->user()->isKasir())
-let lastOrderKd='', bellNotifList=[];
+let lastSeenAt='', bellNotifList=[];
 function toggleBellDropdown(e) {
     e && e.stopPropagation();
     const dd = document.getElementById('bellDropdown');
@@ -618,18 +675,29 @@ function clearBellNotif() {
     updateBellBadge(0);
 }
 function fetchNotifOrder() {
-    fetch('{{ route("kasir.api.notif") }}?last_id='+encodeURIComponent(lastOrderKd),{headers:{'X-Requested-With':'XMLHttpRequest'}})
+    fetch('{{ route("kasir.api.notif") }}?last_id='+encodeURIComponent(lastSeenAt),{headers:{'X-Requested-With':'XMLHttpRequest'}})
     .then(r=>r.json()).then(data=>{
-        if(data.latest_kd && data.latest_kd!==lastOrderKd && lastOrderKd!=='') {
-            bellNotifList.unshift({kd:data.latest_kd,waktu:new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})});
-            if(bellNotifList.length>10)bellNotifList.pop();
+        if (lastSeenAt !== '' && data.orders && data.orders.length > 0) {
+            data.orders.forEach(o => {
+                bellNotifList.unshift({kd:o.kd_order, waktu:o.waktu});
+            });
+            if(bellNotifList.length>10)bellNotifList.length=10;
             renderBellList(); updateBellBadge(bellNotifList.length);
             if(!document.getElementById('bellDropdown')?.classList.contains('open')) {
                 document.getElementById('bellBtn')?.classList.add('bell-ring');
                 setTimeout(()=>document.getElementById('bellBtn')?.classList.remove('bell-ring'),2000);
             }
+            // Dashboard & daftar order kasir dirender server-side, jadi statistik dan
+            // kartu order tidak ikut update otomatis — refresh halaman supaya kasir
+            // tidak perlu reload manual untuk melihat order baru.
+            @if(request()->routeIs('kasir.dashboard') || request()->routeIs('kasir.order'))
+            if (!document.getElementById('bellDropdown')?.classList.contains('open')
+                && !document.querySelector('.modal-backdrop.active')) {
+                setTimeout(() => window.location.reload(), 1200);
+            }
+            @endif
         }
-        if(data.latest_kd)lastOrderKd=data.latest_kd;
+        if (data.latest_seen_at) lastSeenAt = data.latest_seen_at;
     }).catch(()=>{});
 }
 function renderBellList() {
