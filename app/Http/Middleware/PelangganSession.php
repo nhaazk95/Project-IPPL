@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\DetailOrderTemporary;
 use App\Models\Meja;
+use App\Models\Order;
 use Closure;
 use Illuminate\Http\Request;
 
@@ -27,7 +28,7 @@ class PelangganSession
             $kdPelanggan = $sess['kd_pelanggan'];
             $loginAt     = $sess['login_at'] ?? null;
 
-            $adaOrderSelesai = \App\Models\Order::where('kd_pelanggan', $kdPelanggan)
+            $adaOrderSelesai = Order::where('kd_pelanggan', $kdPelanggan)
                 ->where('status_order', 'selesai')
                 ->when($loginAt, fn($q) => $q->where('waktu', '>=', $loginAt))
                 ->exists();
@@ -41,7 +42,7 @@ class PelangganSession
             }
 
             // Meja sudah dikosongkan admin / tidak ada — force logout
-            \App\Models\DetailOrderTemporary::where('pelanggan_kd', $sess['kd_pelanggan'])->delete();
+            DetailOrderTemporary::where('pelanggan_kd', $sess['kd_pelanggan'])->delete();
             session()->forget(['pelanggan', 'keranjang_count', 'checkout_keterangan']);
 
             return redirect()->route('pelanggan.login')
