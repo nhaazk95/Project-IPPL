@@ -29,8 +29,9 @@
     25 => 'Laravel\\Tinker\\TinkerServiceProvider',
     26 => 'Carbon\\Laravel\\ServiceProvider',
     27 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
-    28 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    29 => 'Pest\\Laravel\\PestServiceProvider',
+    28 => 'NunoMaduro\\PhpInsights\\Application\\Adapters\\Laravel\\InsightsServiceProvider',
+    29 => 'Termwind\\Laravel\\TermwindServiceProvider',
+    30 => 'Pest\\Laravel\\PestServiceProvider',
   ),
   'eager' => 
   array (
@@ -47,8 +48,9 @@
     10 => 'Laravel\\Pail\\PailServiceProvider',
     11 => 'Carbon\\Laravel\\ServiceProvider',
     12 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
-    13 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    14 => 'Pest\\Laravel\\PestServiceProvider',
+    13 => 'NunoMaduro\\PhpInsights\\Application\\Adapters\\Laravel\\InsightsServiceProvider',
+    14 => 'Termwind\\Laravel\\TermwindServiceProvider',
+    15 => 'Pest\\Laravel\\PestServiceProvider',
   ),
   'deferred' => 
   array (

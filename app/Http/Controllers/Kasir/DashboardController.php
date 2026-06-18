@@ -37,33 +37,30 @@ class DashboardController extends Controller
 
     public function notifOrder(Request $request)
     {
-        // last_id sekarang berisi timestamp ISO (waktu order terakhir yang sudah
-        // diketahui kasir), bukan kd_order — karena kd_order punya suffix acak
-        // sehingga perbandingan '>' pada string tidak merepresentasikan urutan waktu.
-        $lastSeenAt = $request->input('last_id', '');
+        // Pendekatan: kasir mengirim kode-kode order pending yang SUDAH dia ketahui
+        // (known_ids, dipisah koma) dan flag initialized (1 setelah polling pertama).
+        // Server tinggal cari order pending yang TIDAK ada di daftar itu — jadi tidak
+        // bergantung pada perbandingan string kd_order atau presisi timestamp.
+        $knownIds   = array_filter(explode(',', $request->input('known_ids', '')));
+        $initialized = $request->boolean('initialized');
 
-        $jumlahPending = Order::where('status_order', 'pending')->count();
+        $pendingOrders = Order::where('status_order', 'pending')
+            ->orderBy('waktu')
+            ->get(['kd_order', 'waktu']);
 
-        $newOrders = collect();
-        if ($lastSeenAt) {
-            $newOrders = Order::where('status_order', 'pending')
-                ->where('waktu', '>', $lastSeenAt)
-                ->orderBy('waktu')
-                ->limit(10)
-                ->get(['kd_order', 'waktu']);
-        }
-
-        $latestOrder = Order::orderByDesc('waktu')->first();
+        $newOrders = $initialized
+            ? $pendingOrders->reject(fn ($o) => in_array($o->kd_order, $knownIds, true))
+            : collect();
 
         return response()->json([
-            'pending'    => $jumlahPending,
-            'new_orders' => $newOrders->count(),
-            'orders'     => $newOrders->map(fn ($o) => [
+            'pending'         => $pendingOrders->count(),
+            'new_orders'      => $newOrders->count(),
+            'orders'          => $newOrders->values()->map(fn ($o) => [
                 'kd_order' => $o->kd_order,
                 'waktu'    => $o->waktu?->format('H:i'),
             ]),
-            // dikembalikan supaya client menyimpan timestamp terbaru sebagai acuan polling berikutnya
-            'latest_seen_at' => $latestOrder?->waktu?->toIso8601String() ?? $lastSeenAt,
+            // semua kd_order pending saat ini — disimpan client sebagai "known_ids" untuk polling berikutnya
+            'all_pending_ids' => $pendingOrders->pluck('kd_order'),
         ]);
     }
 }

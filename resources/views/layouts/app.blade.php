@@ -352,10 +352,18 @@
 <div id="sidebarOverlay" onclick="document.getElementById('sidebar').classList.remove('open');this.style.display='none';" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;"></div>
 
 <script>
-// Clock
+// Clock — dipaksa ke WIB (Asia/Jakarta) terlepas dari timezone device,
+// supaya konsisten untuk semua kasir/admin yang mengakses dari mana pun.
 (function tick() {
     const el = document.getElementById('clock');
-    if (el) { const n = new Date(); el.textContent = String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0'); }
+    if (el) {
+        const parts = new Intl.DateTimeFormat('en-GB', {
+            timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', hour12: false
+        }).formatToParts(new Date());
+        const h = parts.find(p => p.type === 'hour').value;
+        const m = parts.find(p => p.type === 'minute').value;
+        el.textContent = h + ':' + m;
+    }
     setTimeout(tick, 1000);
 })();
 
@@ -655,7 +663,12 @@ document.addEventListener('click', function(e) {
 // ─── Bell (Kasir only) ──────────────────────────────────
 @auth
 @if(auth()->user()->isKasir())
-let lastSeenAt='', bellNotifList=[];
+let knownOrderIds = JSON.parse(localStorage.getItem('dnusaKnownOrderIds') || 'null');
+let bellInitialized = knownOrderIds !== null;
+if (knownOrderIds === null) knownOrderIds = [];
+let bellNotifList = JSON.parse(localStorage.getItem('dnusaBellNotif') || '[]');
+if (bellNotifList.length) { renderBellList(); updateBellBadge(bellNotifList.length); }
+
 function toggleBellDropdown(e) {
     e && e.stopPropagation();
     const dd = document.getElementById('bellDropdown');
@@ -671,33 +684,46 @@ function updateBellBadge(c) {
 }
 function clearBellNotif() {
     bellNotifList=[];
+    localStorage.removeItem('dnusaBellNotif');
     document.getElementById('bellList').innerHTML='<div class="bell-empty">Tidak ada order baru</div>';
     updateBellBadge(0);
 }
 function fetchNotifOrder() {
-    fetch('{{ route("kasir.api.notif") }}?last_id='+encodeURIComponent(lastSeenAt),{headers:{'X-Requested-With':'XMLHttpRequest'}})
+    const params = new URLSearchParams({
+        known_ids: knownOrderIds.join(','),
+        initialized: bellInitialized ? '1' : '0',
+    });
+    fetch('{{ route("kasir.api.notif") }}?'+params.toString(), {headers:{'X-Requested-With':'XMLHttpRequest'}})
     .then(r=>r.json()).then(data=>{
-        if (lastSeenAt !== '' && data.orders && data.orders.length > 0) {
+        let gotNew = false;
+        if (data.orders && data.orders.length > 0) {
+            gotNew = true;
             data.orders.forEach(o => {
                 bellNotifList.unshift({kd:o.kd_order, waktu:o.waktu});
             });
             if(bellNotifList.length>10)bellNotifList.length=10;
+            localStorage.setItem('dnusaBellNotif', JSON.stringify(bellNotifList));
             renderBellList(); updateBellBadge(bellNotifList.length);
             if(!document.getElementById('bellDropdown')?.classList.contains('open')) {
                 document.getElementById('bellBtn')?.classList.add('bell-ring');
                 setTimeout(()=>document.getElementById('bellBtn')?.classList.remove('bell-ring'),2000);
             }
-            // Dashboard & daftar order kasir dirender server-side, jadi statistik dan
-            // kartu order tidak ikut update otomatis — refresh halaman supaya kasir
-            // tidak perlu reload manual untuk melihat order baru.
-            @if(request()->routeIs('kasir.dashboard') || request()->routeIs('kasir.order'))
-            if (!document.getElementById('bellDropdown')?.classList.contains('open')
-                && !document.querySelector('.modal-backdrop.active')) {
-                setTimeout(() => window.location.reload(), 1200);
-            }
-            @endif
         }
-        if (data.latest_seen_at) lastSeenAt = data.latest_seen_at;
+        if (data.all_pending_ids) {
+            knownOrderIds = data.all_pending_ids;
+            localStorage.setItem('dnusaKnownOrderIds', JSON.stringify(knownOrderIds));
+        }
+        bellInitialized = true;
+        // Dashboard & daftar order kasir dirender server-side, jadi statistik dan
+        // kartu order tidak ikut update otomatis — refresh halaman supaya kasir
+        // tidak perlu reload manual untuk melihat order baru. Notifikasi bell tetap
+        // tersimpan di localStorage sehingga tidak hilang setelah reload.
+        @if(request()->routeIs('kasir.dashboard') || request()->routeIs('kasir.order'))
+        if (gotNew && !document.getElementById('bellDropdown')?.classList.contains('open')
+            && !document.querySelector('.modal-backdrop.active')) {
+            setTimeout(() => window.location.reload(), 2500);
+        }
+        @endif
     }).catch(()=>{});
 }
 function renderBellList() {
