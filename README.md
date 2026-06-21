@@ -76,10 +76,10 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 | 2311102316    | Boutefhika Nuha Zidayatul K.| 
 
 ## Password & Username
-• Admin: 
+- Admin: 
 username=admin1
 password=admin123
-• Kasir: 
+- Kasir: 
 username=kasir1 
 password=kasir123
 
