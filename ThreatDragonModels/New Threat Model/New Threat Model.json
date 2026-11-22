@@ -1,0 +1,29 @@
+{
+  "version": "2.6.2",
+  "release_version": "1",
+  "released_at": "2026-11-22",
+  "summary": {
+    "title": "New Threat Model",
+    "owner": "galuh",
+    "description": "coba coba ",
+    "id": 0
+  },
+  "detail": {
+    "contributors": [],
+    "diagrams": [
+      {
+        "id": 0,
+        "title": "Diagram STRIDE baru",
+        "diagramType": "STRIDE",
+        "placeholder": "Deskripsi diagram STRIDE baru",
+        "thumbnail": "./public/content/images/thumbnail.stride.jpg",
+        "version": "2.6.2",
+        "cells": [],
+        "description": "coba coba"
+      }
+    ],
+    "diagramTop": 1,
+    "reviewer": "",
+    "threatTop": 0
+  }
+}
