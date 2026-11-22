@@ -5,7 +5,7 @@
   "summary": {
     "title": "New Threat Model",
     "owner": "galuh",
-    "description": "coba coba ",
+    "description": "coba coba siber",
     "id": 0
   },
   "detail": {
@@ -13,17 +13,17 @@
     "diagrams": [
       {
         "id": 0,
-        "title": "Diagram STRIDE baru",
+        "title": "web ",
         "diagramType": "STRIDE",
         "placeholder": "Deskripsi diagram STRIDE baru",
         "thumbnail": "./public/content/images/thumbnail.stride.jpg",
         "version": "2.6.2",
         "cells": [],
-        "description": "coba coba"
+        "description": "siber"
       }
     ],
     "diagramTop": 1,
-    "reviewer": "",
+    "reviewer": "ayu",
     "threatTop": 0
   }
 }
